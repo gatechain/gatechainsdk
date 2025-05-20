@@ -9,11 +9,6 @@ const (
 	codeWrongPassword = 2
 )
 
-type keybaseError interface {
-	error
-	Code() int
-}
-
 type errKeyNotFound struct {
 	code int
 	name string
@@ -35,19 +30,6 @@ func NewErrKeyNotFound(name string) error {
 	}
 }
 
-// IsErrKeyNotFound returns true if the given error is errKeyNotFound
-func IsErrKeyNotFound(err error) bool {
-	if err == nil {
-		return false
-	}
-	if keyErr, ok := err.(keybaseError); ok {
-		if keyErr.Code() == codeKeyNotFound {
-			return true
-		}
-	}
-	return false
-}
-
 type errWrongPassword struct {
 	code int
 }
@@ -65,17 +47,4 @@ func NewErrWrongPassword() error {
 	return errWrongPassword{
 		code: codeWrongPassword,
 	}
-}
-
-// IsErrWrongPassword returns true if the given error is errWrongPassword
-func IsErrWrongPassword(err error) bool {
-	if err == nil {
-		return false
-	}
-	if keyErr, ok := err.(keybaseError); ok {
-		if keyErr.Code() == codeWrongPassword {
-			return true
-		}
-	}
-	return false
 }

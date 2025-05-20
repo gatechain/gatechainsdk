@@ -3,7 +3,7 @@ package client
 import (
 	"fmt"
 
-	auth2 "github.com/gatechain/gatechainsdk/gatechain/auth"
+	"github.com/gatechain/gatechainsdk/gatechain/auth"
 	"github.com/gatechain/gatechainsdk/gatechain/auth/exported"
 	"github.com/gatechain/gatechainsdk/gatechain/context"
 	"github.com/gatechain/gatechainsdk/gatechain/types"
@@ -17,12 +17,12 @@ func EnsureFromVaultAccount(ctx context.NodeVaultQuerierImpl) error {
 // queryVaultAccount queries an vault account using custom query endpoint of auth module
 // returns an error if result is `null` otherwise account data
 func queryVaultAccount(ctx context.NodeVaultQuerierImpl, addr types.AccAddress) ([]byte, error) {
-	bz, err := ctx.Codec.MarshalJSON(auth2.NewQueryVaultAccountParams(addr))
+	bz, err := ctx.Codec.MarshalJSON(auth.NewQueryVaultAccountParams(addr))
 	if err != nil {
 		return nil, err
 	}
 
-	route := fmt.Sprintf("custom/%s/%s", auth2.QuerierRoute, auth2.QueryAccount)
+	route := fmt.Sprintf("custom/%s/%s", auth.QuerierRoute, auth.QueryAccount)
 
 	res, _, err := ctx.QueryWithData(route, bz)
 	if err != nil {
@@ -56,8 +56,5 @@ func GetRevocableTokens(ctx context.NodeVaultQuerierImpl, address []byte, height
 	if err != nil {
 		return nil, err
 	}
-
-	// TODO: fix me
-	// coins = auth.ConvertTxHashPrefixForDelayTxCoinsArray(coins)
 	return coins, nil
 }

@@ -2,46 +2,15 @@ package types
 
 import (
 	"fmt"
-	"github.com/gatechain/gatechainsdk/gatechain/node/appinterface"
 	"sort"
 	"strings"
+
+	"github.com/gatechain/gatechainsdk/gatechain/node/appinterface"
 )
 
-// ----------------------------------------------------------------------------
-// Event Manager
-// ----------------------------------------------------------------------------
-
-// EventManager implements a simple wrapper around a slice of Event objects that
-// can be emitted from.
-type EventManager struct {
-	events Events
-}
-
-func NewEventManager() *EventManager {
-	return &EventManager{EmptyEvents()}
-}
-
-func (em *EventManager) Events() Events { return em.events }
-
-// EmitEvent stores a single Event object.
-func (em *EventManager) EmitEvent(event Event) {
-	em.events = em.events.AppendEvent(event)
-}
-
-// EmitEvents stores a series of Event objects.
-func (em *EventManager) EmitEvents(events Events) {
-	em.events = em.events.AppendEvents(events)
-}
-
-// ABCIEvents returns all stored Event objects as abci.Event objects.
-func (em EventManager) ABCIEvents() []appinterface.Event {
-	return em.events.ToABCIEvents()
-}
-
-// ----------------------------------------------------------------------------
-// Events
-// ----------------------------------------------------------------------------
-
+// // ----------------------------------------------------------------------------
+// // Events
+// // ----------------------------------------------------------------------------
 type (
 	// Event is a type alias for an ABCI Event
 	Event appinterface.Event
@@ -57,26 +26,9 @@ type (
 	Events []Event
 )
 
-// NewEvent creates a new Event object with a given type and slice of one or more
-// attributes.
-func NewEvent(ty string, attrs ...Attribute) Event {
-	e := Event{Type: ty}
-
-	for _, attr := range attrs {
-		e.Attributes = append(e.Attributes, NewAttribute(attr.Key, attr.Value).ToKVPair())
-	}
-
-	return e
-}
-
 // NewAttribute returns a new key/value Attribute object.
 func NewAttribute(k, v string) Attribute {
 	return Attribute{k, v}
-}
-
-// EmptyEvents returns an empty slice of events.
-func EmptyEvents() Events {
-	return make(Events, 0)
 }
 
 func (a Attribute) String() string {
@@ -86,35 +38,6 @@ func (a Attribute) String() string {
 // ToKVPair converts an Attribute object into a Tendermint key/value pair.
 func (a Attribute) ToKVPair() appinterface.KVPair {
 	return appinterface.KVPair{Key: toBytes2(a.Key), Value: toBytes2(a.Value)}
-}
-
-// AppendAttributes adds one or more attributes to an Event.
-func (e Event) AppendAttributes(attrs ...Attribute) Event {
-	for _, attr := range attrs {
-		e.Attributes = append(e.Attributes, attr.ToKVPair())
-	}
-	return e
-}
-
-// AppendEvent adds an Event to a slice of events.
-func (e Events) AppendEvent(event Event) Events {
-	return append(e, event)
-}
-
-// AppendEvents adds a slice of Event objects to an exist slice of Event objects.
-func (e Events) AppendEvents(events Events) Events {
-	return append(e, events...)
-}
-
-// ToABCIEvents converts a slice of Event objects to a slice of abci.Event
-// objects.
-func (e Events) ToABCIEvents() []appinterface.Event {
-	res := make([]appinterface.Event, len(e), len(e))
-	for i, ev := range e {
-		res[i] = appinterface.Event{Type: ev.Type, Attributes: ev.Attributes}
-	}
-
-	return res
 }
 
 func toBytes2(i interface{}) []byte {
@@ -131,11 +54,6 @@ func toBytes2(i interface{}) []byte {
 // Common event types and attribute keys
 var (
 	EventTypeMessage = "message"
-
-	AttributeKeyAction = "action"
-	AttributeKeyModule = "module"
-	AttributeKeySender = "sender"
-	AttributeKeyAmount = "amount"
 )
 
 type (

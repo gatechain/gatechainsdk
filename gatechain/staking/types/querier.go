@@ -6,19 +6,14 @@ import (
 
 // query endpoints supported by the staking Querier
 const (
-	QueryValidators                    = "validators"
-	QueryValidator                     = "validator"
 	QueryDelegatorDelegations          = "delegatorDelegations"
 	QueryDelegatorUnbondingDelegations = "delegatorUnbondingDelegations"
 	QueryRedelegations                 = "redelegations"
 	QueryValidatorDelegations          = "validatorDelegations"
-	QueryValidatorRedelegations        = "validatorRedelegations"
+	//QueryValidatorRedelegations        = "validatorRedelegations"
 	QueryValidatorUnbondingDelegations = "validatorUnbondingDelegations"
 	QueryDelegation                    = "delegation"
 	QueryUnbondingDelegation           = "unbondingDelegation"
-	QueryDelegatorValidators           = "delegatorValidators"
-	QueryDelegatorValidator            = "delegatorValidator"
-	QueryPool                          = "pool"
 	QueryParameters                    = "parameters"
 )
 

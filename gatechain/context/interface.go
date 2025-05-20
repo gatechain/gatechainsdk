@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
-	"strings"
 
 	sdk "github.com/gatechain/gatechainsdk/gatechain/types"
 )
@@ -92,78 +91,6 @@ func AppendPrefixAddress(buffer []byte, cliCtx NodeVaultQuerierImpl) ([]byte, er
 		return nil, err
 	}
 	return bz, nil
-}
-
-// AppendPrefixHash return txHash with tx type
-func AppendPrefixHash(buffer []byte, cliCtx NodeVaultQuerierImpl) ([]byte, error) {
-	var data interface{}
-
-	err := json.Unmarshal(buffer, &data)
-	if err != nil {
-		return nil, err
-	}
-	//unmarshal data to map[string]interface{}
-	switch vv := data.(type) {
-	case []interface{}:
-		newValue := make([]interface{}, 0)
-		for i := range vv {
-			subBuffer, err := json.Marshal(vv[i])
-			if err != nil {
-				return nil, err
-			}
-			newSubBuffer, err := AppendPrefixHash(subBuffer, cliCtx)
-			if err != nil {
-				return nil, err
-			}
-			var (
-				subData interface{}
-			)
-			if err := json.Unmarshal(newSubBuffer, &subData); err != nil {
-				return nil, err
-			}
-			newValue = append(newValue, subData)
-		}
-		data = newValue
-	case map[string]interface{}:
-		newValue := make(map[string]interface{})
-		for k := range vv {
-			switch vv[k].(type) {
-			case string:
-				// key whether contains "hash"
-				if isContainHash(k) {
-					vv[k] = "REVOCABLEPAY-" + vv[k].(string)
-				}
-			}
-			// convert map[string]interface{}
-			subBuffer, err := json.Marshal(vv[k])
-			if err != nil {
-				return nil, err
-			}
-			newSubBuffer, err := AppendPrefixHash(subBuffer, cliCtx)
-			if err != nil {
-				return nil, err
-			}
-			var subData interface{}
-			if err := json.Unmarshal(newSubBuffer, &subData); err != nil {
-				return nil, err
-			}
-			newValue[k] = subData
-		}
-		data = newValue
-	}
-	bz, err := json.Marshal(data)
-	if err != nil {
-		return nil, err
-	}
-	return bz, nil
-}
-func isContainHash(data string) bool {
-	return strings.Contains(data, "tx_hash")
-}
-
-// isContainAddress return the string is contains 'address'.
-func isContainAddress(data string) bool {
-	return strings.Contains(data, "address")
 }
 
 // isAccAddress check address is type of AccAddress.

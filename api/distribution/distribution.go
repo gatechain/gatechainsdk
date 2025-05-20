@@ -1,60 +1,84 @@
 package distribution
 
 import (
+	"fmt"
+
 	"github.com/gatechain/gatechainsdk/gatechain/auth"
 	"github.com/gatechain/gatechainsdk/gatechain/context"
-	cli2 "github.com/gatechain/gatechainsdk/gatechain/distribution/client/cli"
+	"github.com/gatechain/gatechainsdk/gatechain/distribution/client/cli"
 )
 
-// gatecli distribution params
-// GetCmdQueryParams implements the query params command.
-func GetCmdQueryParams(ctx *context.NodeVaultQuerierImpl, queryRoute string) {
-	cli2.GetCmdQueryParams(ctx, queryRoute)
+type Service struct {
+	ctx *context.NodeVaultQuerierImpl
 }
 
-// GetCmdQueryValidatorOutstandingRewards implements the query validator outstanding rewards command.
-func GetCmdQueryValidatorOutstandingRewards(ctx *context.NodeVaultQuerierImpl, queryRoute, ValidatorAddress string) {
-	cli2.GetCmdQueryValidatorOutstandingRewards(ctx, queryRoute, ValidatorAddress)
+func NewService(ctx *context.NodeVaultQuerierImpl) *Service {
+	return &Service{ctx: ctx}
 }
 
-// GetCmdQueryValidatorCommission implements the query validator commission command.
-func GetCmdQueryValidatorCommission(ctx *context.NodeVaultQuerierImpl, queryRoute, validatorAddr string) {
-	cli2.GetCmdQueryValidatorCommission(ctx, queryRoute, validatorAddr)
+func (s *Service) QueryParams() {
+	cli.QueryParams(s.ctx)
 }
 
-// GetCmdQueryValidatorSlashes implements the query validator slashes command.
-func GetCmdQueryValidatorSlashes(ctx *context.NodeVaultQuerierImpl, queryRoute string, validatorAddress, startHeightStr, endHeightStr string) {
-	cli2.GetCmdQueryValidatorSlashes(ctx, queryRoute, validatorAddress, startHeightStr, endHeightStr)
+// QueryValidatorOutstandingRewards implements the query validator outstanding rewards command.
+func (s *Service) QueryValidatorOutstandingRewards(ValidatorAddress string) {
+	cli.QueryValidatorOutstandingRewards(s.ctx, ValidatorAddress)
 }
 
-// GetCmdQueryDelegatorRewards implements the query delegator rewards command.
-func GetCmdQueryDelegatorRewards(ctx *context.NodeVaultQuerierImpl, queryRoute string, args []string) {
-	cli2.GetCmdQueryDelegatorRewards(ctx, queryRoute, args)
+// QueryValidatorCommission implements the query validator commission command.
+func (s *Service) QueryValidatorCommission(validatorAddr string) {
+	cli.QueryValidatorCommission(s.ctx, validatorAddr)
 }
 
-// GetCmdQueryCommunityPool returns the command for fetching community pool info
-func GetCmdQueryCommunityPool(ctx *context.NodeVaultQuerierImpl, queryRoute string) {
-	cli2.GetCmdQueryCommunityPool(ctx, queryRoute)
+// QueryDelegatorRewards implements the query delegator rewards command.
+func (s *Service) QueryDelegatorRewards(args []string) {
+	cli.QueryDelegatorRewards(s.ctx, args)
+}
+
+// QueryCommunityPool returns the command for fetching community pool info
+func (s *Service) QueryCommunityPool() {
+	cli.QueryCommunityPool(s.ctx)
 }
 
 // command to withdraw rewards
-func GetCmdWithdrawRewards(ctx *context.NodeVaultQuerierImpl, txBldr auth.TxBuilder, delegatorAddress, validatorAddress string, bComission bool) {
-	cli2.GetCmdWithdrawRewards(ctx, txBldr, delegatorAddress, validatorAddress, bComission)
+func (s *Service) WithdrawRewards(delegatorAddress, validatorAddress string, bComission bool, fees, chainID string, gas uint64) {
+	txBldr := auth.NewTxBuilderFromCLI(s.ctx.RootDir, fees, chainID, gas, s.ctx.Codec)
+	txBldr, err := auth.UpdateValidHeight(s.ctx, txBldr)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	cli.WithdrawRewards(s.ctx, txBldr, delegatorAddress, validatorAddress, bComission)
 }
 
 // command to withdraw all rewards
-func GetGetCmdWithdrawAllRewards(ctx *context.NodeVaultQuerierImpl, txBldr auth.TxBuilder, queryRoute, delegatorAddr string) {
-	cli2.GetGetCmdWithdrawAllRewards(ctx, txBldr, queryRoute, delegatorAddr)
+func (s *Service) WithdrawAllRewards(delegatorAddr string, fees, chainID string, gas uint64) {
+	txBldr := auth.NewTxBuilderFromCLI(s.ctx.RootDir, fees, chainID, gas, s.ctx.Codec)
+	txBldr, err := auth.UpdateValidHeight(s.ctx, txBldr)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	cli.WithdrawAllRewards(s.ctx, txBldr, delegatorAddr)
 }
 
 // command to replace a delegator's withdrawal address
-func SetWithdrawAddr(ctx *context.NodeVaultQuerierImpl, txBldr auth.TxBuilder, delegatorAddress, withdrawAddress string) {
-	cli2.SetWithdrawAddr(ctx, txBldr, delegatorAddress, withdrawAddress)
+func (s *Service) SetWithdrawAddr(delegatorAddress, withdrawAddress string, fees, chainID string, gas uint64) {
+	txBldr := auth.NewTxBuilderFromCLI(s.ctx.RootDir, fees, chainID, gas, s.ctx.Codec)
+	txBldr, err := auth.UpdateValidHeight(s.ctx, txBldr)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	cli.SetWithdrawAddr(s.ctx, txBldr, delegatorAddress, withdrawAddress)
 }
 
-// DelegatorAddress: delAddr,
-//
-//	validatorAddress: valAddr,
-func GetCmdRewardReinvestment(ctx *context.NodeVaultQuerierImpl, txBldr auth.TxBuilder, delegatorAddress, validatorAddress string) {
-	cli2.GetCmdRewardReinvestment(ctx, txBldr, delegatorAddress, validatorAddress)
+func (s *Service) RewardReinvestment(delegatorAddress, validatorAddress string, fees, chainID string, gas uint64) {
+	txBldr := auth.NewTxBuilderFromCLI(s.ctx.RootDir, fees, chainID, gas, s.ctx.Codec)
+	txBldr, err := auth.UpdateValidHeight(s.ctx, txBldr)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	cli.RewardReinvestment(s.ctx, txBldr, delegatorAddress, validatorAddress)
 }

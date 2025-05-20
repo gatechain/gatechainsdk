@@ -4,142 +4,176 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	auth2 "github.com/gatechain/gatechainsdk/gatechain/auth"
+
+	"github.com/gatechain/gatechainsdk/gatechain/auth"
 	"github.com/gatechain/gatechainsdk/gatechain/context"
-	client2 "github.com/gatechain/gatechainsdk/gatechain/revocable/client"
-	types3 "github.com/gatechain/gatechainsdk/gatechain/revocable/types"
-	types2 "github.com/gatechain/gatechainsdk/gatechain/types"
+	"github.com/gatechain/gatechainsdk/gatechain/revocable/client"
+	"github.com/gatechain/gatechainsdk/gatechain/revocable/types"
+	sdk "github.com/gatechain/gatechainsdk/gatechain/types"
 )
 
-func QueryTxCmd(ctx *context.NodeVaultQuerierImpl, hashHexStr string) {
-	res, err := auth2.QueryTx(ctx, hashHexStr)
+type Service struct {
+	ctx *context.NodeVaultQuerierImpl
+}
+
+func NewService(ctx *context.NodeVaultQuerierImpl) *Service {
+	return &Service{ctx: ctx}
+}
+
+func (s *Service) QueryTx(hashHexStr string) {
+	res, err := auth.QueryTx(s.ctx, hashHexStr)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 	if res.Empty() {
 		fmt.Println(fmt.Errorf("No transaction found with hash %s", hashHexStr))
+		return
 	}
 	fmt.Println(res)
 }
 
-func GetAccountRevocableTxCmd(ctx *context.NodeVaultQuerierImpl, vaultAddr string) {
-	retriever := auth2.NewVaultRetriever(ctx)
-	key, err := types2.AccAddressFromBech32(vaultAddr)
+func (s *Service) GetAccountRevocableTx(vaultAddr string) {
+	retriever := auth.NewVaultRetriever(s.ctx)
+	key, err := sdk.AccAddressFromBech32(vaultAddr)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 	account, height, err := retriever.GetAccountWithHeight(key)
 	fmt.Println(account, height, err)
 
-	key, addressType, err := types2.AccAddressTypeFromBech32(vaultAddr)
+	key, addressType, err := sdk.AccAddressTypeFromBech32(vaultAddr)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	if addressType != types2.VaultAccount_type && addressType != types2.MultiSignerVaultAccount {
+	if addressType != sdk.VaultAccount_type && addressType != sdk.MultiSignerVaultAccount {
 		fmt.Println(errors.New("input account must be vault account"))
+		return
 	}
 
 	if err := retriever.EnsureExists(key); err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	height, err = ctx.GetChainHeight()
+	height, err = s.ctx.GetChainHeight()
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
 	vault, err := retriever.GetAccount(key)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
 	data, err := vault.GetRevocableTokensDetail(height)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 	fmt.Println(data)
 }
 
-func RevocableTxSendCmd(ctx *context.NodeVaultQuerierImpl, txBldr auth2.TxBuilder, from_addr, to_addr, amount string) {
-	fromAccAddress, _, err := types2.AccAddressTypeFromBech32(from_addr)
+func (s *Service) RevocableTxSend(from_addr, to_addr, amount, fees, chainID string, gas uint64) {
+	txBldr := auth.NewTxBuilderFromCLI(s.ctx.RootDir, fees, chainID, gas, s.ctx.Codec)
+	txBldr, err := auth.UpdateValidHeight(s.ctx, txBldr)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	toAccAddress, _, err := types2.AccAddressTypeFromBech32(to_addr)
+	fromAccAddress, _, err := sdk.AccAddressTypeFromBech32(from_addr)
 	if err != nil {
 		fmt.Println(err)
+		return
+	}
+
+	toAccAddress, _, err := sdk.AccAddressTypeFromBech32(to_addr)
+	if err != nil {
+		fmt.Println(err)
+		return
 	}
 
 	// parse coins trying to be sent
-	coins, err := types2.ParseCoins(amount)
+	coins, err := sdk.ParseCoins(amount)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	msg := types3.NewMsgRevocableSend(fromAccAddress, toAccAddress, coins)
+	msg := types.NewMsgRevocableSend(fromAccAddress, toAccAddress, coins)
 
-	txbytes, err := auth2.CompleteAndBroadcastTxCLI(txBldr, ctx, []types2.Msg{msg}, true)
+	txbytes, err := auth.CompleteAndBroadcastTxCLI(txBldr, s.ctx, []sdk.Msg{msg}, true)
 	fmt.Println(txbytes, err)
 }
 
-func RevokeTxCmd(ctx *context.NodeVaultQuerierImpl, txBldr auth2.TxBuilder, fromAddr, txHash string) {
-	fromAccAddress, err := types2.AccAddressFromBech32(fromAddr)
+func (s *Service) RevokeTx(fromAddr, txHash, fees, chainID string, gas uint64) {
+
+	txBldr := auth.NewTxBuilderFromCLI(s.ctx.RootDir, fees, chainID, gas, s.ctx.Codec)
+	txBldr, err := auth.UpdateValidHeight(s.ctx, txBldr)
 	if err != nil {
 		fmt.Println(err)
-	}
-	ctx.WithFromAddress(fromAccAddress)
-	if err := client2.EnsureFromVaultAccount(*ctx); err != nil {
-		fmt.Println(err)
+		return
 	}
 
-	txHash, err = auth2.SplitTxHashPreFix(txHash)
+	fromAccAddress, err := sdk.AccAddressFromBech32(fromAddr)
 	if err != nil {
 		fmt.Println(err)
+		return
+	}
+	s.ctx.WithFromAddress(fromAccAddress)
+	if err := client.EnsureFromVaultAccount(*s.ctx); err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	txHash, err = auth.SplitTxHashPreFix(txHash)
+	if err != nil {
+		fmt.Println(err)
+		return
 	}
 
 	// get tx detail
-	tx, err := auth2.QueryTx(ctx, txHash)
+	tx, err := auth.QueryTx(s.ctx, txHash)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	vaultAccount, err := client2.GetVaultAccount(*ctx, fromAccAddress)
+	vaultAccount, err := client.GetVaultAccount(*s.ctx, fromAccAddress)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	height, err := ctx.GetChainHeight()
+	height, err := s.ctx.GetChainHeight()
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	data, err := client2.GetRevocableTokens(*ctx, fromAccAddress, height)
+	data, err := client.GetRevocableTokens(*s.ctx, fromAccAddress, height)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
 	index := uint64(0)
-	//if len(args) == 2 {
-	//	index, err = strconv.ParseUint(args[1], 10, 64)
-	//	if err != nil {
-	//		return err
-	//	}
-	//}
 
 	delayHeight := uint64(0)
-	coins := types2.Coins{}
+	coins := sdk.Coins{}
 	for _, delay := range data {
 		delayTxHash := delay.TxHash
 		// TODO: fix me
-		//delayTxHash, err := sdk.SplitTxHashPreFix(delay.TxHash)
-		//if err != nil {
-		//	return err
-		//}
 		if delayTxHash == txHash {
 			if index != delay.Index {
 				fmt.Println(errors.New("index for revoke tx input error"))
+				return
 			}
 			delayHeight = delay.Height
 			coins = coins.Add(delay.Coins)
@@ -149,77 +183,89 @@ func RevokeTxCmd(ctx *context.NodeVaultQuerierImpl, txBldr auth2.TxBuilder, from
 
 	if delayHeight == uint64(0) {
 		fmt.Println("can not find revoke tx delayHeight : " + txHash)
+		return
 	}
 
-	toAddress := types2.AccAddress{}
+	toAddress := sdk.AccAddress{}
 	if uint64(len(tx.Tx.GetMsgs())) < index+1 {
 		fmt.Println("can not find revoke tx index: " + txHash)
+		return
 	}
 	txMsg := tx.Tx.GetMsgs()[index]
 	switch txMsg := txMsg.(type) {
-	case types3.MsgRevocableSend:
+	case types.MsgRevocableSend:
 		toAddress = txMsg.ToAddress
 	default:
 		fmt.Println("can not find revoke tx MsgRevoke: " + txHash)
+		return
 	}
 	// build and sign the transaction, then broadcast to Tendermint
-	msg := types3.NewMsgRevoke(fromAccAddress, vaultAccount.GetSecurityAddress().Address, toAddress, int64(delayHeight), int64(index), txHash, coins)
-	txbytes, err := auth2.CompleteAndBroadcastTxCLI(txBldr, ctx, []types2.Msg{msg}, true)
+	msg := types.NewMsgRevoke(fromAccAddress, vaultAccount.GetSecurityAddress().Address, toAddress, int64(delayHeight), int64(index), txHash, coins)
+	txbytes, err := auth.CompleteAndBroadcastTxCLI(txBldr, s.ctx, []sdk.Msg{msg}, true)
 	fmt.Println(txbytes, err)
 }
 
-func TxStatusCmd(hashHexStr string, ctx *context.NodeVaultQuerierImpl) {
+func (s *Service) TxStatus(hashHexStr string) {
 
-	revGetter := types3.NewRevocableRetriever(ctx)
-	txData, err := auth2.QueryTx(ctx, hashHexStr)
+	revGetter := types.NewRevocableRetriever(s.ctx)
+	txData, err := auth.QueryTx(s.ctx, hashHexStr)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 	if txData.Empty() {
 		fmt.Println(fmt.Errorf("No transaction found with hash %s", hashHexStr))
+		return
 	}
-	hashStr, err := auth2.SplitTxHashPreFix(hashHexStr)
+	hashStr, err := auth.SplitTxHashPreFix(hashHexStr)
 	if err != nil {
 		fmt.Println(err)
+		return
+
 	}
 	hash, err := hex.DecodeString(hashStr)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	output := &types2.RevocableTxResponse{}
+	output := &sdk.RevocableTxResponse{}
 	revocabletx, err := revGetter.GetTx(hash)
 	if err != nil {
-		output = types2.NewRevocableTxResponse(types2.IRREVOCABLEPAY, "")
+		output = sdk.NewRevocableTxResponse(sdk.IRREVOCABLEPAY, "")
 	} else if revocabletx.RevokeHeight == uint64(0) {
 
-		sender := auth2.GetRevocableTxSender(txData)
-		vaultGetter := auth2.NewVaultRetriever(ctx)
+		sender := auth.GetRevocableTxSender(txData)
+		vaultGetter := auth.NewVaultRetriever(s.ctx)
 
-		key, _, err := types2.AccAddressTypeFromBech32(sender)
+		key, _, err := sdk.AccAddressTypeFromBech32(sender)
 		if err != nil {
 			fmt.Println(err)
+			return
 		}
 
 		if err := vaultGetter.EnsureExists(key); err != nil {
 			fmt.Println(err)
+			return
 		}
 
 		vault, height, err := vaultGetter.GetAccountWithHeight(key)
 		if err != nil {
 			fmt.Println(err)
+			return
 		}
 
 		if height > txData.Height+int64(vault.GetDelayHeight()) {
-			output = types2.NewRevocableTxResponse(types2.IRREVOCABLEPAY, "")
+			output = sdk.NewRevocableTxResponse(sdk.IRREVOCABLEPAY, "")
 		} else {
-			output = types2.NewRevocableTxResponse(types2.REVOCABLEPAY, "")
+			output = sdk.NewRevocableTxResponse(sdk.REVOCABLEPAY, "")
 		}
 	} else {
-		output = types2.NewRevocableTxResponse(types2.REVOKED, "REVOKE-"+hex.EncodeToString(revocabletx.RevokeTxHash))
+		output = sdk.NewRevocableTxResponse(sdk.REVOKED, "REVOKE-"+hex.EncodeToString(revocabletx.RevokeTxHash))
 	}
-	err = ctx.PrintOutput(output)
+	err = s.ctx.PrintOutput(output)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 }

@@ -3,7 +3,7 @@ package crypto
 import (
 	"path/filepath"
 
-	keys2 "github.com/gatechain/gatechainsdk/gatechain/crypto/keys"
+	keys "github.com/gatechain/gatechainsdk/gatechain/crypto/keys"
 )
 
 // available output formats.
@@ -16,10 +16,10 @@ const (
 )
 
 // NewKeyBaseFromDir initializes a keybase at a particular dir.
-func NewKeyBaseFromDir(rootDir string) (keys2.Keybase, error) {
+func NewKeyBaseFromDir(rootDir string) (keys.Keybase, error) {
 	return getLazyKeyBaseFromDir(rootDir)
 }
 
-func getLazyKeyBaseFromDir(rootDir string) (keys2.Keybase, error) {
-	return keys2.New(defaultKeyDBName, filepath.Join(rootDir, "keys")), nil
+func getLazyKeyBaseFromDir(rootDir string) (keys.Keybase, error) {
+	return keys.New(defaultKeyDBName, filepath.Join(rootDir, "keys")), nil
 }

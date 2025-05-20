@@ -20,17 +20,14 @@ import (
 	"bytes"
 	"encoding/base32"
 	"fmt"
+	"math"
 
 	"github.com/gatechain/crypto"
-	"math"
 )
 
 type (
 	// Address is a unique identifier corresponding to ownership of money
 	Address crypto.Digest
-
-	// AddressSlice is used for address sort
-	AddressSlice []Address
 )
 
 const (
@@ -43,26 +40,6 @@ func (addr Address) GetChecksum() []byte {
 	shortAddressHash := crypto.Hash(addr[:])
 	checksum := shortAddressHash[len(shortAddressHash)-checksumLength:]
 	return checksum
-}
-
-// GetUserAddress returns the human-readable, checksummed version of the address
-func (addr Address) GetUserAddress() string {
-	return addr.String()
-}
-
-func (a AddressSlice) Len() int {
-	return len(a)
-}
-func (a AddressSlice) Swap(i, j int) {
-	a[i], a[j] = a[j], a[i]
-}
-func (a AddressSlice) Less(i, j int) bool {
-	compareResult := bytes.Compare(a[i][:], a[j][:])
-	if compareResult <= 0 {
-		return true
-	} else {
-		return false
-	}
 }
 
 // Conver []byte address to Address object
@@ -110,11 +87,6 @@ func (addr Address) String() string {
 	return base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(addrWithChecksum)
 }
 
-// MarshalText returns the address string as an array of bytes
-func (addr Address) MarshalText() ([]byte, error) {
-	return []byte(addr.String()), nil
-}
-
 // UnmarshalText initializes the Address from an array of bytes.
 func (addr *Address) UnmarshalText(text []byte) error {
 	address, err := UnmarshalChecksumAddress(string(text))
@@ -123,9 +95,4 @@ func (addr *Address) UnmarshalText(text []byte) error {
 		return nil
 	}
 	return err
-}
-
-// IsZero checks if an address is the zero value.
-func (addr Address) IsZero() bool {
-	return addr == Address{}
 }

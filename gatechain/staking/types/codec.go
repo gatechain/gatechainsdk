@@ -7,12 +7,10 @@ import (
 // Register concrete types on codec codec
 func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(MsgCreateValidator{}, "MsgCreateValidator", nil)
-	cdc.RegisterConcrete(MsgEditValidator{}, "MsgEditValidator", nil)
-	cdc.RegisterConcrete(MsgEditValidatorMaxRate{}, "MsgEditValidatorMaxRate", nil)
 	cdc.RegisterConcrete(MsgDelegate{}, "MsgDelegate", nil)
 	cdc.RegisterConcrete(MsgUndelegate{}, "MsgUndelegate", nil)
+
 	cdc.RegisterConcrete(MsgBeginRedelegate{}, "MsgBeginRedelegate", nil)
-	cdc.RegisterConcrete(MsgValidatorSwitchState{}, "MsgValidatorSwitchState", nil)
 	cdc.RegisterConcrete(MsgUndelegateByRetrievalAccount{}, "MsgUndelegateByRetrievalAccount", nil)
 }
 

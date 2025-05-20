@@ -14,7 +14,5 @@ func init() {
 	cdc.RegisterInterface((*Info)(nil), nil)
 	cdc.RegisterConcrete(hd.BIP44Params{}, "crypto/keys/hd/BIP44Params", nil)
 	cdc.RegisterConcrete(localInfo{}, "crypto/keys/localInfo", nil)
-	cdc.RegisterConcrete(offlineInfo{}, "crypto/keys/offlineInfo", nil)
-	cdc.RegisterConcrete(multiInfo{}, "crypto/keys/multiInfo", nil)
 	cdc.Seal()
 }

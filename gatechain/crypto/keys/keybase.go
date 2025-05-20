@@ -1,24 +1,15 @@
 package keys
 
 import (
-	"bufio"
 	"fmt"
-	"os"
-	"reflect"
-	"strings"
-
 	"github.com/cosmos/go-bip39"
 	tmcrypto "github.com/gatechain/crypto"
 	"github.com/gatechain/crypto/ed25519x"
-	cryptoAmino "github.com/gatechain/crypto/encoding/amino"
-	"github.com/gatechain/crypto/secp256k1"
-	"github.com/pkg/errors"
-	dbm "github.com/tendermint/tm-db"
-
 	"github.com/gatechain/gatechainsdk/gatechain/crypto/keys/hd"
 	"github.com/gatechain/gatechainsdk/gatechain/crypto/keys/keyerror"
 	"github.com/gatechain/gatechainsdk/gatechain/crypto/keys/mintkey"
-	types2 "github.com/gatechain/gatechainsdk/gatechain/types"
+	types "github.com/gatechain/gatechainsdk/gatechain/types"
+	dbm "github.com/tendermint/tm-db"
 )
 
 var _ Keybase = dbKeybase{}
@@ -32,41 +23,9 @@ type Language int
 const (
 	// English is the default language to create a mnemonic.
 	// It is the only supported language by this package.
-	English Language = iota + 1
-	// Japanese is currently not supported.
-	Japanese
-	// Korean is currently not supported.
-	Korean
-	// Spanish is currently not supported.
-	Spanish
-	// ChineseSimplified is currently not supported.
-	ChineseSimplified
-	// ChineseTraditional is currently not supported.
-	ChineseTraditional
-	// French is currently not supported.
-	French
-	// Italian is currently not supported.
-	Italian
-	addressSuffix = "address"
-	infoSuffix    = "info"
-)
-
-const (
-	// used for deriving seed from mnemonic
-	DefaultBIP39Passphrase = ""
-
-	// bits of entropy to draw when creating a mnemonic
-	defaultEntropySize = 256
-)
-
-var (
-	// ErrUnsupportedSigningAlgo is raised when the caller tries to use a
-	// different signing scheme than secp256k1.
-	ErrUnsupportedSigningAlgo = errors.New("unsupported signing algo: only ed25519 is supported")
-
-	// ErrUnsupportedLanguage is raised when the caller tries to use a
-	// different language than english for creating a mnemonic sentence.
-	ErrUnsupportedLanguage = errors.New("unsupported language: only english is supported")
+	English       Language = iota + 1
+	addressSuffix          = "address"
+	infoSuffix             = "info"
 )
 
 // dbKeybase combines encryption and storage implementation to provide
@@ -86,50 +45,11 @@ func newDbKeybase(db dbm.DB) Keybase {
 // instance useful for testing purposes and on-the-fly key generation.
 func NewInMemory() Keybase { return dbKeybase{dbm.NewMemDB()} }
 
-// CreateMnemonic generates a new key and persists it to storage, encrypted
-// using the provided password.
-// It returns the generated mnemonic and the key Info.
-// It returns an error if it fails to
-// generate a key for the given algo type, or if another key is
-// already stored under the same name.
-func (kb dbKeybase) CreateMnemonic(name string, language Language, passwd string, algo SigningAlgo) (info Info, mnemonic string, err error) {
-	if language != English {
-		return nil, "", ErrUnsupportedLanguage
-	}
-	if algo != Ed25519 {
-		err = ErrUnsupportedSigningAlgo
-		return
-	}
-
-	// default number of words (24):
-	// this generates a mnemonic directly from the number of words by reading system entropy.
-	entropy, err := bip39.NewEntropy(defaultEntropySize)
-	if err != nil {
-		return
-	}
-	mnemonic, err = bip39.NewMnemonic(entropy)
-	if err != nil {
-		return
-	}
-
-	seed := bip39.NewSeed(mnemonic, DefaultBIP39Passphrase)
-	fullFundraiserPath := types2.GetConfig().GetFullFundraiserPath()
-	info, err = kb.persistDerivedKey(seed, passwd, name, fullFundraiserPath)
-	return
-}
-
 // CreateAccount converts a mnemonic to a private key and persists it, encrypted with the given password.
 func (kb dbKeybase) CreateAccount(name, mnemonic, bip39Passwd, encryptPasswd string, account uint32, index uint32) (Info, error) {
-	coinType := types2.GetConfig().GetCoinType()
+	coinType := types.GetConfig().GetCoinType()
 	hdPath := hd.NewFundraiserParams(account, coinType, index)
 	return kb.Derive(name, mnemonic, bip39Passwd, encryptPasswd, *hdPath)
-}
-
-func (kb dbKeybase) CreateEthAccount(name, mnemonic, bip39Passwd, encryptPasswd string, account uint32, index uint32) (Info, error) {
-	// create master key and derive first key for keyring
-	coinType := types2.GetConfig().GetCoinType()
-	hdPath := hd.NewFundraiserParams(account, coinType, index)
-	return kb.DeriveEth(name, mnemonic, bip39Passwd, encryptPasswd, *hdPath)
 }
 
 func (kb dbKeybase) Derive(name, mnemonic, bip39Passphrase, encryptPasswd string, params hd.BIP44Params) (info Info, err error) {
@@ -142,30 +62,6 @@ func (kb dbKeybase) Derive(name, mnemonic, bip39Passphrase, encryptPasswd string
 	return
 }
 
-func (kb dbKeybase) DeriveEth(name, mnemonic, bip39Passphrase, encryptPasswd string, params hd.BIP44Params) (info Info, err error) {
-	derivedPriv := secp256k1.SecpDeriveKey(mnemonic, bip39Passphrase, params.String())
-
-	if encryptPasswd != "" {
-		info = kb.writeLocalKey(name, derivedPriv, encryptPasswd)
-	} else {
-		pubk := derivedPriv.PubKey()
-		info = kb.writeOfflineKey(name, pubk)
-	}
-	return
-}
-
-// CreateOffline creates a new reference to an offline keypair. It returns the
-// created key info.
-func (kb dbKeybase) CreateOffline(name string, pub tmcrypto.PubKey) (Info, error) {
-	return kb.writeOfflineKey(name, pub), nil
-}
-
-// CreateMulti creates a new reference to a multisig (offline) keypair. It
-// returns the created key info.
-func (kb dbKeybase) CreateMulti(name string, pub tmcrypto.PubKey) (Info, error) {
-	return kb.writeMultisigKey(name, pub), nil
-}
-
 func (kb *dbKeybase) persistDerivedKey(seed []byte, passwd, name, fullHdPath string) (info Info, err error) {
 	masterPriv := ed25519x.GenerateXprvFromSeed(seed)
 	derivedPriv, err := ed25519x.DerivePrivateKeyFromPath(masterPriv, fullHdPath)
@@ -174,32 +70,8 @@ func (kb *dbKeybase) persistDerivedKey(seed []byte, passwd, name, fullHdPath str
 	}
 	if passwd != "" {
 		info = kb.writeLocalKey(name, derivedPriv, passwd)
-	} else {
-		pubk := derivedPriv.PubKey()
-		info = kb.writeOfflineKey(name, pubk)
 	}
 	return
-}
-
-// List returns the keys from storage in alphabetical order.
-func (kb dbKeybase) List() ([]Info, error) {
-	var res []Info
-	iter, err := kb.db.Iterator(nil, nil)
-	fmt.Println(err)
-	defer iter.Close()
-	for ; iter.Valid(); iter.Next() {
-		key := string(iter.Key())
-
-		// need to include only keys in storage that have an info suffix
-		if strings.HasSuffix(key, infoSuffix) {
-			info, err := readInfo(iter.Value())
-			if err != nil {
-				return nil, err
-			}
-			res = append(res, info)
-		}
-	}
-	return res, nil
 }
 
 // Get returns the public information about one key.
@@ -213,7 +85,7 @@ func (kb dbKeybase) Get(name string) (Info, error) {
 	return readInfo(bs)
 }
 
-func (kb dbKeybase) GetByAddress(address types2.AccAddress) (Info, error) {
+func (kb dbKeybase) GetByAddress(address types.AccAddress) (Info, error) {
 	ik, err := kb.db.Get(addrKey(address))
 	fmt.Println(err)
 
@@ -248,29 +120,6 @@ func (kb dbKeybase) Sign(name, passphrase string, msg []byte) (sig []byte, pub t
 			return nil, nil, err
 		}
 
-	case offlineInfo, multiInfo:
-		_, err := fmt.Fprintf(os.Stderr, "Message to sign:\n\n%s\n", msg)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		buf := bufio.NewReader(os.Stdin)
-		_, err = fmt.Fprintf(os.Stderr, "\nEnter Amino-encoded signature:\n")
-		if err != nil {
-			return nil, nil, err
-		}
-
-		// Will block until user inputs the signature
-		signed, err := buf.ReadString('\n')
-		if err != nil {
-			return nil, nil, err
-		}
-
-		if err := cdc.UnmarshalBinaryLengthPrefixed([]byte(signed), sig); err != nil {
-			return nil, nil, errors.Wrap(err, "failed to decode signature")
-		}
-
-		return sig, info.GetPubKey(), nil
 	}
 
 	sig, err = priv.Sign(msg)
@@ -280,177 +129,6 @@ func (kb dbKeybase) Sign(name, passphrase string, msg []byte) (sig []byte, pub t
 
 	pub = priv.PubKey()
 	return sig, pub, nil
-}
-
-func (kb dbKeybase) ExportPrivateKeyObject(name string, passphrase string) (tmcrypto.PrivKey, error) {
-	info, err := kb.Get(name)
-	if err != nil {
-		return nil, err
-	}
-
-	var priv tmcrypto.PrivKey
-
-	switch info.(type) {
-	case localInfo:
-		linfo := info.(localInfo)
-		if linfo.PrivKeyArmor == "" {
-			err = fmt.Errorf("private key not available")
-			return nil, err
-		}
-		priv, err = mintkey.UnarmorDecryptPrivKey(linfo.PrivKeyArmor, passphrase)
-		if err != nil {
-			return nil, err
-		}
-
-	case offlineInfo, multiInfo:
-		return nil, errors.New("only works on local private keys")
-	}
-
-	return priv, nil
-}
-
-func (kb dbKeybase) Export(name string) (armor string, err error) {
-	bz, err := kb.db.Get(infoKey(name))
-	fmt.Println(err)
-
-	if bz == nil {
-		return "", fmt.Errorf("no key to export with name %s", name)
-	}
-	return mintkey.ArmorInfoBytes(bz), nil
-}
-
-// ExportPubKey returns public keys in ASCII armored format.
-// Retrieve a Info object by its name and return the public key in
-// a portable format.
-func (kb dbKeybase) ExportPubKey(name string) (armor string, err error) {
-	bz, err := kb.db.Get(infoKey(name))
-	fmt.Println(err)
-
-	if bz == nil {
-		return "", fmt.Errorf("no key to export with name %s", name)
-	}
-	info, err := readInfo(bz)
-	if err != nil {
-		return
-	}
-	return mintkey.ArmorPubKeyBytes(info.GetPubKey().Bytes()), nil
-}
-
-// ExportPrivKey returns a private key in ASCII armored format.
-// It returns an error if the key does not exist or a wrong encryption passphrase is supplied.
-func (kb dbKeybase) ExportPrivKey(name string, decryptPassphrase string,
-	encryptPassphrase string) (armor string, err error) {
-	priv, err := kb.ExportPrivateKeyObject(name, decryptPassphrase)
-	if err != nil {
-		return "", err
-	}
-
-	return mintkey.EncryptArmorPrivKey(priv, encryptPassphrase), nil
-}
-
-// ImportPrivKey imports a private key in ASCII armor format.
-// It returns an error if a key with the same name exists or a wrong encryption passphrase is
-// supplied.
-func (kb dbKeybase) ImportPrivKey(name string, armor string, passphrase string) error {
-	if _, err := kb.Get(name); err == nil {
-		return errors.New("Cannot overwrite key " + name)
-	}
-
-	privKey, err := mintkey.UnarmorDecryptPrivKey(armor, passphrase)
-	if err != nil {
-		return errors.Wrap(err, "couldn't import private key")
-	}
-
-	kb.writeLocalKey(name, privKey, passphrase)
-	return nil
-}
-
-func (kb dbKeybase) Import(name string, armor string) (err error) {
-	bz, err := kb.db.Get(infoKey(name))
-	fmt.Println(err)
-
-	if len(bz) > 0 {
-		return errors.New("Cannot overwrite data for name " + name)
-	}
-	infoBytes, err := mintkey.UnarmorInfoBytes(armor)
-	if err != nil {
-		return
-	}
-	kb.db.Set(infoKey(name), infoBytes)
-	return nil
-}
-
-// ImportPubKey imports ASCII-armored public keys.
-// Store a new Info object holding a public key only, i.e. it will
-// not be possible to sign with it as it lacks the secret key.
-func (kb dbKeybase) ImportPubKey(name string, armor string) (err error) {
-	bz, err := kb.db.Get(infoKey(name))
-	fmt.Println(err)
-
-	if len(bz) > 0 {
-		return errors.New("Cannot overwrite data for name " + name)
-	}
-	pubBytes, err := mintkey.UnarmorPubKeyBytes(armor)
-	if err != nil {
-		return
-	}
-	pubKey, err := cryptoAmino.PubKeyFromBytes(pubBytes)
-	if err != nil {
-		return
-	}
-	kb.writeOfflineKey(name, pubKey)
-	return
-}
-
-// Delete removes key forever, but we must present the
-// proper passphrase before deleting it (for security).
-// It returns an error if the key doesn't exist or
-// passphrases don't match.
-// Passphrase is ignored when deleting references to
-// offline and Ledger / HW wallet keys.
-func (kb dbKeybase) Delete(name, passphrase string, skipPass bool) error {
-	// verify we have the proper password before deleting
-	info, err := kb.Get(name)
-	if err != nil {
-		return err
-	}
-	if linfo, ok := info.(localInfo); ok && !skipPass {
-		if _, err = mintkey.UnarmorDecryptPrivKey(linfo.PrivKeyArmor, passphrase); err != nil {
-			return err
-		}
-	}
-	kb.db.DeleteSync(addrKey(info.GetAddress()))
-	kb.db.DeleteSync(infoKey(name))
-	return nil
-}
-
-// Update changes the passphrase with which an already stored key is
-// encrypted.
-//
-// oldpass must be the current passphrase used for encryption,
-// getNewpass is a function to get the passphrase to permanently replace
-// the current passphrase
-func (kb dbKeybase) Update(name, oldpass string, getNewpass func() (string, error)) error {
-	info, err := kb.Get(name)
-	if err != nil {
-		return err
-	}
-	switch info.(type) {
-	case localInfo:
-		linfo := info.(localInfo)
-		key, err := mintkey.UnarmorDecryptPrivKey(linfo.PrivKeyArmor, oldpass)
-		if err != nil {
-			return err
-		}
-		newpass, err := getNewpass()
-		if err != nil {
-			return err
-		}
-		kb.writeLocalKey(name, key, newpass)
-		return nil
-	default:
-		return fmt.Errorf("locally stored key required. Received: %v", reflect.TypeOf(info).String())
-	}
 }
 
 // CloseDB releases the lock and closes the storage backend.
@@ -468,18 +146,6 @@ func (kb dbKeybase) writeLocalKey(name string, priv tmcrypto.PrivKey, passphrase
 	return info
 }
 
-func (kb dbKeybase) writeOfflineKey(name string, pub tmcrypto.PubKey) Info {
-	info := newOfflineInfo(name, pub)
-	kb.writeInfo(name, info)
-	return info
-}
-
-func (kb dbKeybase) writeMultisigKey(name string, pub tmcrypto.PubKey) Info {
-	info := NewMultiInfo(name, pub)
-	kb.writeInfo(name, info)
-	return info
-}
-
 func (kb dbKeybase) writeInfo(name string, info Info) {
 	// write the info by key
 	key := infoKey(name)
@@ -489,7 +155,7 @@ func (kb dbKeybase) writeInfo(name string, info Info) {
 	kb.db.SetSync(addrKey(info.GetAddress()), key)
 }
 
-func addrKey(address types2.AccAddress) []byte {
+func addrKey(address types.AccAddress) []byte {
 	return []byte(fmt.Sprintf("%s.%s", address.String(), addressSuffix))
 }
 

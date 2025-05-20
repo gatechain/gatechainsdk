@@ -6,21 +6,16 @@ import (
 
 // querier keys
 const (
-	QueryParams                      = "params"
 	QueryValidatorOutstandingRewards = "validator_outstanding_rewards"
 	QueryValidatorCommission         = "validator_commission"
-	QueryValidatorSlashes            = "validator_slashes"
 	QueryDelegationRewards           = "delegation_rewards"
 	QueryDelegatorTotalRewards       = "delegator_total_rewards"
 	QueryDelegatorValidators         = "delegator_validators"
-	QueryWithdrawAddr                = "withdraw_addr"
-	QueryCommunityPool               = "community_pool"
-
-	ParamCommunityTax          = "community_tax"
-	ParamWithdrawAddrEnabled   = "withdraw_addr_enabled"
-	ParamFirstCommitteeReward  = "first_committee_reward"
-	ParamSecondCommitteeReward = "second_committee_reward"
-	ParamThirdCommitteeReward  = "third_committee_reward"
+	ParamCommunityTax                = "community_tax"
+	ParamWithdrawAddrEnabled         = "withdraw_addr_enabled"
+	ParamFirstCommitteeReward        = "first_committee_reward"
+	ParamSecondCommitteeReward       = "second_committee_reward"
+	ParamThirdCommitteeReward        = "third_committee_reward"
 )
 
 // params for query 'custom/distr/validator_outstanding_rewards'
@@ -44,22 +39,6 @@ type QueryValidatorCommissionParams struct {
 func NewQueryValidatorCommissionParams(validatorAddr sdk.ValAddress) QueryValidatorCommissionParams {
 	return QueryValidatorCommissionParams{
 		ValidatorAddress: validatorAddr,
-	}
-}
-
-// params for query 'custom/distr/validator_slashes'
-type QueryValidatorSlashesParams struct {
-	ValidatorAddress sdk.ValAddress `json:"validator_address" yaml:"validator_address"`
-	StartingHeight   uint64         `json:"starting_height" yaml:"starting_height"`
-	EndingHeight     uint64         `json:"ending_height" yaml:"ending_height"`
-}
-
-// creates a new instance of QueryValidatorSlashesParams
-func NewQueryValidatorSlashesParams(validatorAddr sdk.ValAddress, startingHeight uint64, endingHeight uint64) QueryValidatorSlashesParams {
-	return QueryValidatorSlashesParams{
-		ValidatorAddress: validatorAddr,
-		StartingHeight:   startingHeight,
-		EndingHeight:     endingHeight,
 	}
 }
 
@@ -87,14 +66,4 @@ func NewQueryDelegatorParams(delegatorAddr sdk.AccAddress) QueryDelegatorParams 
 	return QueryDelegatorParams{
 		DelegatorAddress: delegatorAddr,
 	}
-}
-
-// params for query 'custom/distr/withdraw_addr'
-type QueryDelegatorWithdrawAddrParams struct {
-	DelegatorAddress sdk.AccAddress `json:"delegator_address" yaml:"delegator_address"`
-}
-
-// NewQueryDelegatorWithdrawAddrParams creates a new instance of QueryDelegatorWithdrawAddrParams.
-func NewQueryDelegatorWithdrawAddrParams(delegatorAddr sdk.AccAddress) QueryDelegatorWithdrawAddrParams {
-	return QueryDelegatorWithdrawAddrParams{DelegatorAddress: delegatorAddr}
 }

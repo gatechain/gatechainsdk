@@ -10,7 +10,6 @@ func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(MsgWithdrawValidatorCommission{}, "MsgWithdrawValidatorCommission", nil)
 	cdc.RegisterConcrete(MsgSetWithdrawAddress{}, "MsgModifyWithdrawAddress", nil)
 	cdc.RegisterConcrete(MsgRewardReinvestment{}, "MsgRewardReinvestment", nil)
-	//cdc.RegisterConcrete(CommunityPoolSpendProposal{}, "CommunityPoolSpendProposal", nil)
 }
 
 // generic sealed codec to be used throughout module

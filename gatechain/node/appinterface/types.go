@@ -1,67 +1,19 @@
 package appinterface
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
-	"strings"
-	"time"
-
 	"github.com/davidlazar/go-crypto/encoding/base32"
 	"github.com/gatechain/crypto/merkle"
+	"strings"
 
 	"github.com/gatechain/gatechainsdk/gatechain/node/basics"
 )
-
-type Header struct {
-	// basic block info
-	Version  uint64    `protobuf:"bytes,1,opt,name=version,proto3" json:"version"`
-	ChainID  string    `protobuf:"bytes,2,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
-	Height   uint64    `protobuf:"varint,3,opt,name=height,proto3" json:"height,omitempty"`
-	Time     time.Time `protobuf:"bytes,4,opt,name=time,proto3,stdtime" json:"time"`
-	NumTxs   uint64    `protobuf:"varint,5,opt,name=num_txs,json=numTxs,proto3" json:"num_txs,omitempty"`
-	TotalTxs uint64    `protobuf:"varint,6,opt,name=total_txs,json=totalTxs,proto3" json:"total_txs,omitempty"`
-	// prev block info
-	LastBlockId     []byte `protobuf:"bytes,7,opt,name=last_block_id,json=lastBlockId,proto3" json:"last_block_id"`
-	ProposerAddress []byte `protobuf:"bytes,8,opt,name=proposer_address,json=proposerAddress,proto3" json:"proposer_address,omitempty"`
-	ConsensusData   []byte `protobuf:"bytes,9,opt,name=consensus_data,json=consensusData,proto3" json:"consensus_data,omitempty"`
-
-	Committee []CommitteeSingle `json:"committee"`
-
-	OfflineConAccount []basics.Address `json:"offlineConAccount"`
-
-	Equivocation `json:"equivocation"`
-}
-
-type CommitteeSingle struct {
-	CommitteeAddress basics.Address
-	CommitteePower   uint64
-	CommitteeType    uint8
-}
-
-type Equivocation struct {
-	SoftEquivocations [][]byte `json:"softEquivocations"`
-	CertEquivocations [][]byte `json:"certEquivocations"`
-}
 
 type RequestQuery struct {
 	Data   []byte `json:"data"`
 	Path   string `json:"path"`
 	Height int64  `json:"height"`
 	Prove  bool   `json:"Prove"`
-}
-
-type RequestTxSearch struct {
-	Param   string `json:"param"`
-	Page    int    `json:"page"`
-	Limit   int    `json:"limit"`
-	OrderBy string `json:"orderBy"`
-}
-
-// Result of searching for txs
-type ResultTxSearch struct {
-	Txs        []*ResponseTx `json:"txs"`
-	TotalCount int           `json:"total_count"`
 }
 
 type QueryOptions struct {
@@ -92,6 +44,7 @@ type ResponseStatus struct {
 	Events    []Event
 	Data      []byte
 }
+
 type Event struct {
 	Type       string   `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty"`
 	Attributes []KVPair `protobuf:"bytes,2,rep,name=attributes,proto3" json:"attributes,omitempty"`
@@ -99,113 +52,6 @@ type Event struct {
 type KVPair struct {
 	Key   []byte `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
 	Value []byte `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
-}
-
-type RequestCheckTx struct {
-	Tx []byte
-}
-
-type ResponseCheckTx struct {
-	Height int64  `json:"height"`
-	Index  uint32 `json:"index"`
-	Tx     []byte `json:"tx"`
-	ResponseTxValidInfo
-	Response ResponseStatus
-}
-
-type ResponseTxValidInfo struct {
-	FirstValidRound uint64
-	LastValidRound  uint64
-	Fee             uint64
-	Gas             uint64
-}
-
-type ExtraTxInfo struct {
-	Address      string
-	TxNonce      uint64 // nonce in tx
-	AccountNonce uint64 // account real nonce
-	GasPrice     string
-}
-
-func (extra *ExtraTxInfo) Unmarshal(data []byte) error {
-	if data == nil || len(data) == 0 {
-		return errors.New("empty data")
-	}
-	return json.Unmarshal(data, extra)
-}
-
-type RequestInitChain struct {
-	Time          time.Time
-	ChainId       string
-	AppStateBytes []byte
-	ConsensusData []byte
-	Accts         []AccountDelta
-	Version       uint64
-}
-
-type ResponseInitChain struct {
-	Accts    []AccountDelta
-	Response ResponseStatus
-}
-
-type RequestBeginBlock struct {
-	Hash          []byte //BlockHash
-	Header        Header //BlockHeader
-	ConsensusData []byte
-}
-
-type ResponseBeginBlock struct {
-	Response ResponseStatus
-}
-
-type RequestDeliverTx struct {
-	Round        uint64
-	Tx           []byte
-	IndexInBlock int
-}
-
-type ResponseDeliverTx struct {
-	Response     ResponseStatus
-	ResponseData []byte
-}
-
-type DeliverTxResopnseData struct {
-	Address []byte
-	Extra   []byte
-}
-
-type RequestEndBlock struct {
-	Height  uint64
-	BlockID []byte
-}
-
-type AccountDelta struct {
-	Power   uint64
-	Address []byte
-}
-type ResponseEndBlock struct {
-	Accts    []AccountDelta
-	Response ResponseStatus
-}
-
-type RequestCommit struct {
-	Height  uint64
-	BlockID []byte
-}
-
-type ResponseCommit struct {
-	Data     []byte
-	Response ResponseStatus
-}
-
-type RequestGetTxValidInfo struct {
-	Header Header //BlockHeader
-	Tx     []byte
-}
-
-type ResponseGetTxValidInfo struct {
-	ResponseTxValidInfo
-	Response ResponseStatus
 }
 
 type ParticipationData struct {
@@ -231,18 +77,6 @@ func (pd ParticipationData) String() string {
 	return strings.TrimSpace(sb.String())
 }
 
-type RequestExecuteblock struct {
-	ConsensusData []byte
-	Hash          []byte
-	Header        Header
-	Txs           [][]byte
-}
-
-type ResponseExecuteblock struct {
-	ResponseStatus ResponseStatus
-	ResponseTxs    []ResponseTx
-}
-
 type ResponseTx struct {
 	Height         int64          `json:"height"`
 	Index          uint32         `json:"index"`
@@ -253,16 +87,4 @@ type ResponseTx struct {
 type ResponseTxExtra struct {
 	Data  []byte
 	Index uint64
-}
-type RequestUpdateBlock struct {
-	Hash   []byte
-	Height uint64
-}
-
-type ResponseSaveToDisk struct {
-	//Data           []byte
-	ResponseStatus ResponseStatus
-	ResponseTx     []ResponseTx
-	AppData        []byte
-	Accts          []AccountDelta
 }

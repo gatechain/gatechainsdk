@@ -15,8 +15,6 @@ import (
 
 const (
 	blockTypePrivKey = "GATECHAIN PRIVATE KEY"
-	blockTypeKeyInfo = "GATECHAIN KEY INFO"
-	blockTypePubKey  = "GATECHAIN PUBLIC KEY"
 )
 
 // Make bcrypt security parameter var, so it can be changed within the lcd test
@@ -33,56 +31,6 @@ const (
 // a bcrypt hash. (Recall that the nonce still exists to break rainbow tables)
 // For further notes on security parameter choice, see README.md
 var BcryptSecurityParameter = 12
-
-//-----------------------------------------------------------------
-// add armor
-
-// Armor the InfoBytes
-func ArmorInfoBytes(bz []byte) string {
-	return armorBytes(bz, blockTypeKeyInfo)
-}
-
-// Armor the PubKeyBytes
-func ArmorPubKeyBytes(bz []byte) string {
-	return armorBytes(bz, blockTypePubKey)
-}
-
-func armorBytes(bz []byte, blockType string) string {
-	header := map[string]string{
-		"type":    "Info",
-		"version": "0.0.0",
-	}
-	return armor.EncodeArmor(blockType, header, bz)
-}
-
-//-----------------------------------------------------------------
-// remove armor
-
-// Unarmor the InfoBytes
-func UnarmorInfoBytes(armorStr string) (bz []byte, err error) {
-	return unarmorBytes(armorStr, blockTypeKeyInfo)
-}
-
-// Unarmor the PubKeyBytes
-func UnarmorPubKeyBytes(armorStr string) (bz []byte, err error) {
-	return unarmorBytes(armorStr, blockTypePubKey)
-}
-
-func unarmorBytes(armorStr, blockType string) (bz []byte, err error) {
-	bType, header, bz, err := armor.DecodeArmor(armorStr)
-	if err != nil {
-		return
-	}
-	if bType != blockType {
-		err = fmt.Errorf("Unrecognized armor type %q, expected: %q", bType, blockType)
-		return
-	}
-	if header["version"] != "0.0.0" {
-		err = fmt.Errorf("Unrecognized version: %v", header["version"])
-		return
-	}
-	return
-}
 
 //-----------------------------------------------------------------
 // encrypt/decrypt with armor

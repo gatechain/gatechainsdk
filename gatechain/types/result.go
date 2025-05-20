@@ -5,16 +5,10 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/gatechain/gatechainsdk/gatechain/codec"
-	appinterface2 "github.com/gatechain/gatechainsdk/gatechain/node/appinterface"
-	"github.com/gatechain/gatechainsdk/gatechain/rpc/spec/v1"
-	//"github.com/gatechain/gatemint/data/transactions"
-	"math"
 	"strings"
 
-	//v1 "github.com/gatechain/gatemint/daemon/gmd/api/spec/v1"
-
-	ctypes "github.com/tendermint/tendermint/rpc/core/types"
+	"github.com/gatechain/gatechainsdk/gatechain/node/appinterface"
+	"github.com/gatechain/gatechainsdk/gatechain/rpc/spec/v1"
 )
 
 // Result is the union of ResponseFormat and ResponseCheckTx.
@@ -53,22 +47,6 @@ const (
 	REVOKED = uint8(2)
 )
 
-// SimulationResponse defines the response generated when a transaction is successfully
-// simulated by the Baseapp.
-type SimulationResponse struct {
-	GasInfo
-	Result *Result
-}
-
-// GasInfo defines tx execution gas context.
-type GasInfo struct {
-	// GasWanted is the maximum units of work we allow this tx to perform.
-	GasWanted uint64
-
-	// GasUsed is the amount of gas actually consumed.
-	GasUsed uint64
-}
-
 func RevocableStatusStr(status uint8) (str string) {
 	switch status {
 	case IRREVOCABLEPAY:
@@ -79,11 +57,6 @@ func RevocableStatusStr(status uint8) (str string) {
 		str = "REVOKED"
 	}
 	return str
-}
-
-// TODO: In the future, more codes may be OK.
-func (res Result) IsOK() bool {
-	return res.Code.IsOK()
 }
 
 // ABCIMessageLogs represents a slice of ABCIMessageLog.
@@ -98,27 +71,6 @@ type ABCIMessageLog struct {
 	// Events contains a slice of Event objects that were emitted during some
 	// execution.
 	Events StringEvents `json:"events"`
-}
-
-func NewABCIMessageLog(i uint16, success bool, log string, events Events) ABCIMessageLog {
-	return ABCIMessageLog{
-		MsgIndex: i,
-		Success:  success,
-		Log:      log,
-		Events:   StringifyEvents(events.ToABCIEvents()),
-	}
-}
-
-// String implements the fmt.Stringer interface for the ABCIMessageLogs type.
-func (logs ABCIMessageLogs) String() (str string) {
-	if logs != nil {
-		raw, err := codec.Cdc.MarshalJSON(logs)
-		if err == nil {
-			str = string(raw)
-		}
-	}
-
-	return str
 }
 
 // TxResponse defines a structure containing relevant tx data and metadata. The
@@ -171,14 +123,14 @@ func (r RevocableTxResponse) String() string {
 }
 
 // NewResponseResultTx returns a TxResponse given a ResultTx from tendermint
-func NewResponseResultTx(res *appinterface2.ResponseTx, tx Tx, timestamp string) TxResponse {
+func NewResponseResultTx(res *appinterface.ResponseTx, tx Tx, timestamp string) TxResponse {
 	if res == nil {
 		return TxResponse{}
 	}
 
 	parsedLogs, _ := ParseABCILogs(res.Response.Log)
 	return TxResponse{
-		TxHash: fmt.Sprintf("%X", appinterface2.Tx(res.Tx).Hash()),
+		TxHash: fmt.Sprintf("%X", appinterface.Tx(res.Tx).Hash()),
 		Height: res.Height,
 		Code:   res.Response.Code,
 		Data:   strings.ToUpper(hex.EncodeToString(res.Tx)),
@@ -190,74 +142,6 @@ func NewResponseResultTx(res *appinterface2.ResponseTx, tx Tx, timestamp string)
 		Events:    StringifyEvents(res.Response.Events),
 		Tx:        tx,
 		Timestamp: timestamp,
-	}
-}
-
-// NewResponseFormatBroadcastTxCommit returns a TxResponse given a
-// ResultBroadcastTxCommit from tendermint.
-func NewResponseFormatBroadcastTxCommit(res *ctypes.ResultBroadcastTxCommit) TxResponse {
-	if res == nil {
-		return TxResponse{}
-	}
-
-	if !res.CheckTx.IsOK() {
-		return newTxResponseCheckTx(res)
-	}
-
-	return newTxResponseDeliverTx(res)
-}
-
-func newTxResponseCheckTx(res *ctypes.ResultBroadcastTxCommit) TxResponse {
-	if res == nil {
-		return TxResponse{}
-	}
-
-	var txHash string
-	if res.Hash != nil {
-		txHash = res.Hash.String()
-	}
-
-	parsedLogs, _ := ParseABCILogs(res.CheckTx.Log)
-
-	return TxResponse{
-		Height:    res.Height,
-		TxHash:    txHash,
-		Code:      res.CheckTx.Code,
-		Data:      strings.ToUpper(hex.EncodeToString(res.CheckTx.Data)),
-		RawLog:    res.CheckTx.Log,
-		Logs:      parsedLogs,
-		Info:      res.CheckTx.Info,
-		GasWanted: res.CheckTx.GasWanted,
-		GasUsed:   res.CheckTx.GasUsed,
-		//Events:    StringifyEvents(res.CheckTx.Events),
-		Codespace: res.CheckTx.Codespace,
-	}
-}
-
-func newTxResponseDeliverTx(res *ctypes.ResultBroadcastTxCommit) TxResponse {
-	if res == nil {
-		return TxResponse{}
-	}
-
-	var txHash string
-	if res.Hash != nil {
-		txHash = res.Hash.String()
-	}
-
-	parsedLogs, _ := ParseABCILogs(res.DeliverTx.Log)
-
-	return TxResponse{
-		Height:    res.Height,
-		TxHash:    txHash,
-		Code:      res.DeliverTx.Code,
-		Data:      strings.ToUpper(hex.EncodeToString(res.DeliverTx.Data)),
-		RawLog:    res.DeliverTx.Log,
-		Logs:      parsedLogs,
-		Info:      res.DeliverTx.Info,
-		GasWanted: res.DeliverTx.GasWanted,
-		GasUsed:   res.DeliverTx.GasUsed,
-		//Events:    StringifyEvents(res.DeliverTx.Events),
-		Codespace: res.DeliverTx.Codespace,
 	}
 }
 
@@ -340,27 +224,6 @@ func (r TxResponse) String() string {
 // Empty returns true if the response is empty
 func (r TxResponse) Empty() bool {
 	return r.TxHash == "" && r.Logs == nil
-}
-
-// SearchTxsResult defines a structure for querying txs pageable
-type SearchTxsResult struct {
-	TotalCount int          `json:"total_count"` // Count of all txs
-	Count      int          `json:"count"`       // Count of txs in current page
-	PageNumber int          `json:"page_number"` // Index of current page, start from 1
-	PageTotal  int          `json:"page_total"`  // Count of total pages
-	Limit      int          `json:"limit"`       // Max count txs per page
-	Txs        []TxResponse `json:"txs"`         // List of txs in current page
-}
-
-func NewSearchTxsResult(totalCount, count, page, limit int, txs []TxResponse) SearchTxsResult {
-	return SearchTxsResult{
-		TotalCount: totalCount,
-		Count:      count,
-		PageNumber: page,
-		PageTotal:  int(math.Ceil(float64(totalCount) / float64(limit))),
-		Limit:      limit,
-		Txs:        txs,
-	}
 }
 
 // ParseABCILogs attempts to parse a stringified ABCI tx log into a slice of

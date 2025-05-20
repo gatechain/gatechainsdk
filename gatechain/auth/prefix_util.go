@@ -3,11 +3,12 @@ package auth
 import (
 	"bytes"
 	"fmt"
-	types2 "github.com/gatechain/gatechainsdk/gatechain/types"
 	"strings"
+
+	"github.com/gatechain/gatechainsdk/gatechain/types"
 )
 
-func ConvertTxHashPrefixForTxResponse(txResponse types2.TxResponse) types2.TxResponse {
+func ConvertTxHashPrefixForTxResponse(txResponse types.TxResponse) types.TxResponse {
 	txType := ""
 
 	if txResponse.Logs != nil && len(txResponse.Logs) != 0 {
@@ -42,7 +43,7 @@ func ConvertTxHashPrefixForTxResponse(txResponse types2.TxResponse) types2.TxRes
 	return txResponse
 }
 
-func GetRevocableTxSender(txResponse types2.TxResponse) string {
+func GetRevocableTxSender(txResponse types.TxResponse) string {
 	sender := ""
 	isRevocable := false
 	if txResponse.Logs != nil && len(txResponse.Logs) != 0 {
@@ -73,9 +74,9 @@ func GetRevocableTxSender(txResponse types2.TxResponse) string {
 			sender = txResponse.Tx.GetMsgs()[0].GetSigners()[0].String()
 			events := txResponse.Events
 			for i := range events {
-				if events[i].Type == types2.EventTypeMessage {
-					attr := make([]types2.Attribute, 0)
-					attr = append(attr, types2.NewAttribute("sender", sender))
+				if events[i].Type == types.EventTypeMessage {
+					attr := make([]types.Attribute, 0)
+					attr = append(attr, types.NewAttribute("sender", sender))
 					for _, attribute := range events[i].Attributes {
 						attr = append(attr, attribute)
 					}
@@ -87,9 +88,9 @@ func GetRevocableTxSender(txResponse types2.TxResponse) string {
 				if logs[i].Events != nil {
 					logEvents := logs[i].Events
 					for i := range logEvents {
-						if logEvents[i].Type == types2.EventTypeMessage {
-							attr := make([]types2.Attribute, 0)
-							attr = append(attr, types2.NewAttribute("sender", sender))
+						if logEvents[i].Type == types.EventTypeMessage {
+							attr := make([]types.Attribute, 0)
+							attr = append(attr, types.NewAttribute("sender", sender))
 							for _, attribute := range logEvents[i].Attributes {
 								attr = append(attr, attribute)
 							}

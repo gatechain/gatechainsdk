@@ -2,8 +2,8 @@ package types
 
 // query endpoints supported by the auth Querier
 const (
-	QueryRevocable = "revocable"
-	QueryTx        = "tx"
+	//QueryRevocable = "revocable"
+	QueryTx = "tx"
 )
 
 // QueryAccountParams defines the params for querying accounts.
@@ -15,4 +15,3 @@ type QueryRevocableTxParams struct {
 func NewQueryRevocableTxParams(hash []byte) QueryRevocableTxParams {
 	return QueryRevocableTxParams{Hash: hash}
 }
-

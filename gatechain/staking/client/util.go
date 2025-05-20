@@ -2,10 +2,11 @@ package client
 
 import (
 	"fmt"
-	v2 "github.com/gatechain/gatechainsdk/gatechain/rpc/spec/v1"
-	types2 "github.com/gatechain/gatechainsdk/gatechain/staking/types"
-	"github.com/gatechain/gatechainsdk/gatechain/types"
 	"strings"
+
+	"github.com/gatechain/gatechainsdk/gatechain/rpc/spec/v1"
+	"github.com/gatechain/gatechainsdk/gatechain/staking/types"
+	sdk "github.com/gatechain/gatechainsdk/gatechain/types"
 )
 
 const (
@@ -14,19 +15,19 @@ const (
 )
 
 type TmpValidator struct {
-	OperatorAddress types.ValAddress   `json:"operator_address" yaml:"operator_address"` // the bech32 address of the validator's operator
-	Power           uint64             `json:"power" yaml:"power"`
-	Status          string             `json:"status" yaml:"status"`
-	PubKey          string             `json:"pubkey" yaml:"pubkey"`                     // the bech32 public key of the validator
-	Tokens          types.Int          `json:"tokens" yaml:"tokens"`                     // delegated tokens
-	PowerRate       types.Dec          `json:"power_rate" yaml:"power_rate"`             // poewe rate
-	DelegatorShares types.Dec          `json:"delegator_shares" yaml:"delegator_shares"` // total shares issued to a validator's delegators
-	Description     types2.Description `json:"description" yaml:"description"`           // description terms for the validator
-	Commission      types2.Commission  `json:"commission" yaml:"commission"`             // commission parameters
+	OperatorAddress sdk.ValAddress    `json:"operator_address" yaml:"operator_address"` // the bech32 address of the validator's operator
+	Power           uint64            `json:"power" yaml:"power"`
+	Status          string            `json:"status" yaml:"status"`
+	PubKey          string            `json:"pubkey" yaml:"pubkey"`                     // the bech32 public key of the validator
+	Tokens          sdk.Int           `json:"tokens" yaml:"tokens"`                     // delegated tokens
+	PowerRate       sdk.Dec           `json:"power_rate" yaml:"power_rate"`             // poewe rate
+	DelegatorShares sdk.Dec           `json:"delegator_shares" yaml:"delegator_shares"` // total shares issued to a validator's delegators
+	Description     types.Description `json:"description" yaml:"description"`           // description terms for the validator
+	Commission      types.Commission  `json:"commission" yaml:"commission"`             // commission parameters
 }
 
-func GetTmpValidator(v types2.Validator, gmValidator v2.ResultConAccount) (*TmpValidator, error) {
-	bechConsPubKey, err := types.Bech32ifyConsPub(v.ConsPubKey)
+func GetTmpValidator(v types.Validator, gmValidator v1.ResultConAccount) (*TmpValidator, error) {
+	bechConsPubKey, err := sdk.Bech32ifyConsPub(v.ConsPubKey)
 	if err != nil {
 		return nil, fmt.Errorf("validator(%s) public key error:%s", v.OperatorAddress.String(), v.ConsPubKey)
 	}
@@ -34,7 +35,7 @@ func GetTmpValidator(v types2.Validator, gmValidator v2.ResultConAccount) (*TmpV
 	if gmValidator.IsFind() {
 		status = OnLine
 	} else {
-		v.PowerRate = types.NewDec(1)
+		v.PowerRate = sdk.NewDec(1)
 	}
 	return &TmpValidator{
 		Power:           gmValidator.Power,

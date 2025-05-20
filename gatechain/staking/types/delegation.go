@@ -1,192 +1,46 @@
 package types
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/gatechain/gatechainsdk/gatechain/codec"
-	"github.com/gatechain/gatechainsdk/gatechain/staking/exported"
-	types2 "github.com/gatechain/gatechainsdk/gatechain/types"
 	"strings"
 	"time"
+
+	"github.com/gatechain/gatechainsdk/gatechain/types"
 )
-
-// DVPair is struct that just has a delegator-validator pair with no other data.
-// It is intended to be used as a marshalable pointer. For example, a DVPair can be used to construct the
-// key to getting an UnbondingDelegation from state.
-type DVPair struct {
-	DelegatorAddress types2.AccAddress
-	ValidatorAddress types2.ValAddress
-}
-
-// DVVTriplet is struct that just has a delegator-validator-validator triplet with no other data.
-// It is intended to be used as a marshalable pointer. For example, a DVVTriplet can be used to construct the
-// key to getting a Redelegation from state.
-type DVVTriplet struct {
-	DelegatorAddress    types2.AccAddress
-	ValidatorSrcAddress types2.ValAddress
-	ValidatorDstAddress types2.ValAddress
-}
-
-// Implements Delegation interface
-var _ exported.DelegationI = Delegation{}
 
 // Delegation represents the bond with tokens held by an account. It is
 // owned by one delegator, and is associated with the voting power of one
 // validator.
 type Delegation struct {
-	DelegatorAddress types2.AccAddress `json:"delegator_address" yaml:"delegator_address"`
-	ValidatorAddress types2.ValAddress `json:"con-account_address" yaml:"con-account_address"`
-	Shares           types2.Dec        `json:"shares" yaml:"shares"`
+	DelegatorAddress types.AccAddress `json:"delegator_address" yaml:"delegator_address"`
+	ValidatorAddress types.ValAddress `json:"con-account_address" yaml:"con-account_address"`
+	Shares           types.Dec        `json:"shares" yaml:"shares"`
 }
-
-// NewDelegation creates a new delegation object
-func NewDelegation(delegatorAddr types2.AccAddress, validatorAddr types2.ValAddress,
-	shares types2.Dec) Delegation {
-
-	return Delegation{
-		DelegatorAddress: delegatorAddr,
-		ValidatorAddress: validatorAddr,
-		Shares:           shares,
-	}
-}
-
-// return the delegation
-func MustMarshalDelegation(cdc *codec.Codec, delegation Delegation) []byte {
-	return cdc.MustMarshalBinaryLengthPrefixed(delegation)
-}
-
-// return the delegation
-func MustUnmarshalDelegation(cdc *codec.Codec, value []byte) Delegation {
-	delegation, err := UnmarshalDelegation(cdc, value)
-	if err != nil {
-		panic(err)
-	}
-	return delegation
-}
-
-// return the delegation
-func UnmarshalDelegation(cdc *codec.Codec, value []byte) (delegation Delegation, err error) {
-	err = cdc.UnmarshalBinaryLengthPrefixed(value, &delegation)
-	return delegation, err
-}
-
-// nolint
-func (d Delegation) Equal(d2 Delegation) bool {
-	return bytes.Equal(d.DelegatorAddress, d2.DelegatorAddress) &&
-		bytes.Equal(d.ValidatorAddress, d2.ValidatorAddress) &&
-		d.Shares.Equal(d2.Shares)
-}
-
-// nolint - for Delegation
-func (d Delegation) GetDelegatorAddr() types2.AccAddress { return d.DelegatorAddress }
-func (d Delegation) GetValidatorAddr() types2.ValAddress { return d.ValidatorAddress }
-func (d Delegation) GetShares() types2.Dec               { return d.Shares }
 
 // String returns a human readable string representation of a Delegation.
 func (d Delegation) String() string {
 	return fmt.Sprintf(`Delegation:
-  Delegator:   %s
-  Con-account: %s
-  Shares:      %s`, d.DelegatorAddress,
+ Delegator:   %s
+ Con-account: %s
+ Shares:      %s`, d.DelegatorAddress,
 		d.ValidatorAddress, d.Shares)
-}
-
-// Delegations is a collection of delegations
-type Delegations []Delegation
-
-func (d Delegations) String() (out string) {
-	for _, del := range d {
-		out += del.String() + "\n"
-	}
-	return strings.TrimSpace(out)
 }
 
 // UnbondingDelegation stores all of a single delegator's unbonding bonds
 // for a single validator in an time-ordered list
 type UnbondingDelegation struct {
-	DelegatorAddress types2.AccAddress          `json:"delegator_address" yaml:"delegator_address"`     // delegator
-	ValidatorAddress types2.ValAddress          `json:"con-account_address" yaml:"con-account_address"` // validator unbonding from operator addr
+	DelegatorAddress types.AccAddress           `json:"delegator_address" yaml:"delegator_address"`     // delegator
+	ValidatorAddress types.ValAddress           `json:"con-account_address" yaml:"con-account_address"` // validator unbonding from operator addr
 	Entries          []UnbondingDelegationEntry `json:"entries" yaml:"entries"`                         // unbonding delegation entries
 }
 
 // UnbondingDelegationEntry - entry to an UnbondingDelegation
 type UnbondingDelegationEntry struct {
-	CreationHeight int64      `json:"creation_height" yaml:"creation_height"` // height which the unbonding took place
-	CompletionTime time.Time  `json:"completion_time" yaml:"completion_time"` // time at which the unbonding delegation will complete
-	InitialBalance types2.Int `json:"initial_balance" yaml:"initial_balance"` // atoms initially scheduled to receive at completion
-	Balance        types2.Int `json:"balance" yaml:"balance"`                 // atoms to receive at completion
-}
-
-// IsMature - is the current entry mature
-func (e UnbondingDelegationEntry) IsMature(currentTime time.Time) bool {
-	return !e.CompletionTime.After(currentTime)
-}
-
-// NewUnbondingDelegation - create a new unbonding delegation object
-func NewUnbondingDelegation(delegatorAddr types2.AccAddress,
-	validatorAddr types2.ValAddress, creationHeight int64, minTime time.Time,
-	balance types2.Int) UnbondingDelegation {
-
-	entry := NewUnbondingDelegationEntry(creationHeight, minTime, balance)
-	return UnbondingDelegation{
-		DelegatorAddress: delegatorAddr,
-		ValidatorAddress: validatorAddr,
-		Entries:          []UnbondingDelegationEntry{entry},
-	}
-}
-
-// NewUnbondingDelegation - create a new unbonding delegation object
-func NewUnbondingDelegationEntry(creationHeight int64, completionTime time.Time,
-	balance types2.Int) UnbondingDelegationEntry {
-
-	return UnbondingDelegationEntry{
-		CreationHeight: creationHeight,
-		CompletionTime: completionTime,
-		InitialBalance: balance,
-		Balance:        balance,
-	}
-}
-
-// AddEntry - append entry to the unbonding delegation
-func (d *UnbondingDelegation) AddEntry(creationHeight int64,
-	minTime time.Time, balance types2.Int) {
-
-	entry := NewUnbondingDelegationEntry(creationHeight, minTime, balance)
-	d.Entries = append(d.Entries, entry)
-}
-
-// RemoveEntry - remove entry at index i to the unbonding delegation
-func (d *UnbondingDelegation) RemoveEntry(i int64) {
-	d.Entries = append(d.Entries[:i], d.Entries[i+1:]...)
-}
-
-// return the unbonding delegation
-func MustMarshalUBD(cdc *codec.Codec, ubd UnbondingDelegation) []byte {
-	return cdc.MustMarshalBinaryLengthPrefixed(ubd)
-}
-
-// unmarshal a unbonding delegation from a store value
-func MustUnmarshalUBD(cdc *codec.Codec, value []byte) UnbondingDelegation {
-	ubd, err := UnmarshalUBD(cdc, value)
-	if err != nil {
-		panic(err)
-	}
-	return ubd
-}
-
-// unmarshal a unbonding delegation from a store value
-func UnmarshalUBD(cdc *codec.Codec, value []byte) (ubd UnbondingDelegation, err error) {
-	err = cdc.UnmarshalBinaryLengthPrefixed(value, &ubd)
-	return ubd, err
-}
-
-// nolint
-// inefficient but only used in testing
-func (d UnbondingDelegation) Equal(d2 UnbondingDelegation) bool {
-	bz1 := ModuleCdc.MustMarshalBinaryLengthPrefixed(&d)
-	bz2 := ModuleCdc.MustMarshalBinaryLengthPrefixed(&d2)
-	return bytes.Equal(bz1, bz2)
+	CreationHeight int64     `json:"creation_height" yaml:"creation_height"` // height which the unbonding took place
+	CompletionTime time.Time `json:"completion_time" yaml:"completion_time"` // time at which the unbonding delegation will complete
+	InitialBalance types.Int `json:"initial_balance" yaml:"initial_balance"` // atoms initially scheduled to receive at completion
+	Balance        types.Int `json:"balance" yaml:"balance"`                 // atoms to receive at completion
 }
 
 // String returns a human readable string representation of an UnbondingDelegation.
@@ -220,95 +74,18 @@ func (ubds UnbondingDelegations) String() (out string) {
 // redelegating bonds from a particular source validator to a
 // particular destination validator
 type Redelegation struct {
-	DelegatorAddress    types2.AccAddress   `json:"delegator_address" yaml:"delegator_address"`             // delegator
-	ValidatorSrcAddress types2.ValAddress   `json:"con-account_src_address" yaml:"con-account_src_address"` // validator redelegation source operator addr
-	ValidatorDstAddress types2.ValAddress   `json:"con-account_dst_address" yaml:"con-account_dst_address"` // validator redelegation destination operator addr
+	DelegatorAddress    types.AccAddress    `json:"delegator_address" yaml:"delegator_address"`             // delegator
+	ValidatorSrcAddress types.ValAddress    `json:"con-account_src_address" yaml:"con-account_src_address"` // validator redelegation source operator addr
+	ValidatorDstAddress types.ValAddress    `json:"con-account_dst_address" yaml:"con-account_dst_address"` // validator redelegation destination operator addr
 	Entries             []RedelegationEntry `json:"entries" yaml:"entries"`                                 // redelegation entries
 }
 
 // RedelegationEntry - entry to a Redelegation
 type RedelegationEntry struct {
-	CreationHeight int64      `json:"creation_height" yaml:"creation_height"` // height at which the redelegation took place
-	CompletionTime time.Time  `json:"completion_time" yaml:"completion_time"` // time at which the redelegation will complete
-	InitialBalance types2.Int `json:"initial_balance" yaml:"initial_balance"` // initial balance when redelegation started
-	SharesDst      types2.Dec `json:"shares_dst" yaml:"shares_dst"`           // amount of destination-validator shares created by redelegation
-}
-
-// NewRedelegation - create a new redelegation object
-func NewRedelegation(delegatorAddr types2.AccAddress, validatorSrcAddr,
-	validatorDstAddr types2.ValAddress, creationHeight int64,
-	minTime time.Time, balance types2.Int,
-	sharesDst types2.Dec) Redelegation {
-
-	entry := NewRedelegationEntry(creationHeight,
-		minTime, balance, sharesDst)
-
-	return Redelegation{
-		DelegatorAddress:    delegatorAddr,
-		ValidatorSrcAddress: validatorSrcAddr,
-		ValidatorDstAddress: validatorDstAddr,
-		Entries:             []RedelegationEntry{entry},
-	}
-}
-
-// NewRedelegation - create a new redelegation object
-func NewRedelegationEntry(creationHeight int64,
-	completionTime time.Time, balance types2.Int,
-	sharesDst types2.Dec) RedelegationEntry {
-
-	return RedelegationEntry{
-		CreationHeight: creationHeight,
-		CompletionTime: completionTime,
-		InitialBalance: balance,
-		SharesDst:      sharesDst,
-	}
-}
-
-// IsMature - is the current entry mature
-func (e RedelegationEntry) IsMature(currentTime time.Time) bool {
-	return !e.CompletionTime.After(currentTime)
-}
-
-// AddEntry - append entry to the unbonding delegation
-func (d *Redelegation) AddEntry(creationHeight int64,
-	minTime time.Time, balance types2.Int,
-	sharesDst types2.Dec) {
-
-	entry := NewRedelegationEntry(creationHeight, minTime, balance, sharesDst)
-	d.Entries = append(d.Entries, entry)
-}
-
-// RemoveEntry - remove entry at index i to the unbonding delegation
-func (d *Redelegation) RemoveEntry(i int64) {
-	d.Entries = append(d.Entries[:i], d.Entries[i+1:]...)
-}
-
-// return the redelegation
-func MustMarshalRED(cdc *codec.Codec, red Redelegation) []byte {
-	return cdc.MustMarshalBinaryLengthPrefixed(red)
-}
-
-// unmarshal a redelegation from a store value
-func MustUnmarshalRED(cdc *codec.Codec, value []byte) Redelegation {
-	red, err := UnmarshalRED(cdc, value)
-	if err != nil {
-		panic(err)
-	}
-	return red
-}
-
-// unmarshal a redelegation from a store value
-func UnmarshalRED(cdc *codec.Codec, value []byte) (red Redelegation, err error) {
-	err = cdc.UnmarshalBinaryLengthPrefixed(value, &red)
-	return red, err
-}
-
-// nolint
-// inefficient but only used in tests
-func (d Redelegation) Equal(d2 Redelegation) bool {
-	bz1 := ModuleCdc.MustMarshalBinaryLengthPrefixed(&d)
-	bz2 := ModuleCdc.MustMarshalBinaryLengthPrefixed(&d2)
-	return bytes.Equal(bz1, bz2)
+	CreationHeight int64     `json:"creation_height" yaml:"creation_height"` // height at which the redelegation took place
+	CompletionTime time.Time `json:"completion_time" yaml:"completion_time"` // time at which the redelegation will complete
+	InitialBalance types.Int `json:"initial_balance" yaml:"initial_balance"` // initial balance when redelegation started
+	SharesDst      types.Dec `json:"shares_dst" yaml:"shares_dst"`           // amount of destination-validator shares created by redelegation
 }
 
 // String returns a human readable string representation of a Redelegation.
@@ -335,28 +112,14 @@ func (d Redelegation) String() string {
 	return strings.TrimRight(out, "\n")
 }
 
-// Redelegations are a collection of Redelegation
-type Redelegations []Redelegation
-
-func (d Redelegations) String() (out string) {
-	for _, red := range d {
-		out += red.String() + "\n"
-	}
-	return strings.TrimSpace(out)
-}
-
 // ----------------------------------------------------------------------------
-// Client Types
+// client Types
 
 // DelegationResponse is equivalent to Delegation except that it contains a balance
 // in addition to shares which is more suitable for client responses.
 type DelegationResponse struct {
 	Delegation
-	Balance types2.Int `json:"balance" yaml:"balance"`
-}
-
-func NewDelegationResp(d types2.AccAddress, v types2.ValAddress, s types2.Dec, b types2.Int) DelegationResponse {
-	return DelegationResponse{NewDelegation(d, v, s), b}
+	Balance types.Int `json:"balance" yaml:"balance"`
 }
 
 // String implements the Stringer interface for DelegationResponse.
@@ -402,22 +165,7 @@ type RedelegationResponse struct {
 // responses.
 type RedelegationEntryResponse struct {
 	RedelegationEntry
-	Balance types2.Int `json:"balance"`
-}
-
-func NewRedelegationResponse(d types2.AccAddress, vSrc, vDst types2.ValAddress, entries []RedelegationEntryResponse) RedelegationResponse {
-	return RedelegationResponse{
-		Redelegation{
-			DelegatorAddress:    d,
-			ValidatorSrcAddress: vSrc,
-			ValidatorDstAddress: vDst,
-		},
-		entries,
-	}
-}
-
-func NewRedelegationEntryResponse(ch int64, ct time.Time, s types2.Dec, ib, b types2.Int) RedelegationEntryResponse {
-	return RedelegationEntryResponse{NewRedelegationEntry(ch, ct, ib, s), b}
+	Balance types.Int `json:"balance"`
 }
 
 // String implements the Stringer interface for RedelegationResp.

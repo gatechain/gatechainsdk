@@ -2,40 +2,24 @@ package cli
 
 import (
 	"fmt"
-	auth2 "github.com/gatechain/gatechainsdk/gatechain/auth"
+	"os"
+
+	"github.com/gatechain/gatechainsdk/gatechain/auth"
 	"github.com/gatechain/gatechainsdk/gatechain/codec"
 	"github.com/gatechain/gatechainsdk/gatechain/context"
-	sdk "github.com/gatechain/gatechainsdk/gatechain/types"
-	"os"
 )
 
-func MakeSignCmd(UnsignTxFile, SignTxFile string, cliCtx *context.NodeVaultQuerierImpl, txBldr auth2.TxBuilder) error {
-	stdTx, err := auth2.ReadStdTxFromFile(cliCtx.GetCodec(), UnsignTxFile)
+func CreateSignTX(UnsignTxFile, SignTxFile string, cliCtx *context.NodeVaultQuerierImpl, txBldr auth.TxBuilder) error {
+	stdTx, err := auth.ReadStdTxFromFile(cliCtx.GetCodec(), UnsignTxFile)
 	if err != nil {
 		return err
 	}
 	txBldr = txBldr.WithValidHeight(stdTx.ValidHeight).WithNonce(stdTx.Nonces[0])
-	// if --signature-only is on, then override --append
-	var newTx auth2.StdTx
+	var newTx auth.StdTx
 	generateSignatureOnly := false
-	multisigAddrStr := ""
 
-	if multisigAddrStr != "" {
-		var multisigAddr sdk.AccAddress
-
-		multisigAddr, err = sdk.AccAddressFromBech32(multisigAddrStr)
-		if err != nil {
-			return err
-		}
-
-		newTx, err = auth2.SignStdTxWithSignerAddress(
-			txBldr, cliCtx, multisigAddr, cliCtx.GetFromName(), stdTx, true,
-		)
-		generateSignatureOnly = true
-	} else {
-		appendSig := true
-		newTx, err = auth2.SignStdTx(txBldr, cliCtx, cliCtx.GetFromName(), stdTx, appendSig, true)
-	}
+	appendSig := true
+	newTx, err = auth.SignStdTx(txBldr, cliCtx, cliCtx.GetFromName(), stdTx, appendSig, true)
 
 	if err != nil {
 		return err
@@ -59,7 +43,7 @@ func MakeSignCmd(UnsignTxFile, SignTxFile string, cliCtx *context.NodeVaultQueri
 	return nil
 }
 
-func getSignatureJSON(cdc *codec.Codec, newTx auth2.StdTx, indent, generateSignatureOnly bool) ([]byte, error) {
+func getSignatureJSON(cdc *codec.Codec, newTx auth.StdTx, indent, generateSignatureOnly bool) ([]byte, error) {
 	switch generateSignatureOnly {
 	case true:
 		switch indent {

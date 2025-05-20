@@ -2,6 +2,7 @@ package auth
 
 import (
 	"fmt"
+
 	"github.com/gatechain/gatechainsdk/gatechain/auth/exported"
 	"github.com/gatechain/gatechainsdk/gatechain/codec"
 	sdk "github.com/gatechain/gatechainsdk/gatechain/types"
@@ -73,14 +74,4 @@ func (ar AccountRetriever) GetAccountNumber(addr sdk.AccAddress) (uint64, error)
 	}
 
 	return acc.GetAccountNumber(), nil
-}
-
-// GetAccountNumberSequence returns sequence and account number for the given address.
-// It returns an error if the account couldn't be retrieved from the state.
-func (ar AccountRetriever) GetAccountNumberSequence(addr sdk.AccAddress) (uint64, uint64, error) {
-	acc, err := ar.GetAccount(addr)
-	if err != nil {
-		return 0, 0, err
-	}
-	return acc.GetAccountNumber(), acc.GetSequence(), nil
 }

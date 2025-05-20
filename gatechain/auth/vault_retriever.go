@@ -2,7 +2,8 @@ package auth
 
 import (
 	"fmt"
-	exported2 "github.com/gatechain/gatechainsdk/gatechain/auth/exported"
+
+	"github.com/gatechain/gatechainsdk/gatechain/auth/exported"
 	"github.com/gatechain/gatechainsdk/gatechain/codec"
 	sdk "github.com/gatechain/gatechainsdk/gatechain/types"
 )
@@ -30,7 +31,7 @@ func NewVaultRetriever(querier NodeVaultQuerier) VaultRetriever {
 
 // GetAccount queries for an account given an address and a block height. An
 // error is returned if the query or decoding fails.
-func (ar VaultRetriever) GetAccount(addr sdk.AccAddress) (exported2.VaultAccount, error) {
+func (ar VaultRetriever) GetAccount(addr sdk.AccAddress) (exported.VaultAccount, error) {
 	account, _, err := ar.GetAccountWithHeight(addr)
 	return account, err
 }
@@ -38,7 +39,7 @@ func (ar VaultRetriever) GetAccount(addr sdk.AccAddress) (exported2.VaultAccount
 // GetAccountWithHeight queries for an account given an address. Returns the
 // height of the query with the account. An error is returned if the query
 // or decoding fails.
-func (ar VaultRetriever) GetAccountWithHeight(addr sdk.AccAddress) (exported2.VaultAccount, int64, error) {
+func (ar VaultRetriever) GetAccountWithHeight(addr sdk.AccAddress) (exported.VaultAccount, int64, error) {
 	bs, err := ar.querier.GetCodec().MarshalJSON(NewQueryVaultAccountParams(addr))
 	if err != nil {
 		return nil, 0, err
@@ -49,12 +50,12 @@ func (ar VaultRetriever) GetAccountWithHeight(addr sdk.AccAddress) (exported2.Va
 		return nil, height, err
 	}
 
-	var account exported2.Account
+	var account exported.Account
 	if err := ar.querier.GetCodec().UnmarshalJSON(res, &account); err != nil {
 		return nil, height, err
 	}
 
-	return account.(exported2.VaultAccount), height, nil
+	return account.(exported.VaultAccount), height, nil
 }
 
 // EnsureExists returns an error if no account exists for the given address else nil.

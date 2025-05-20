@@ -1,7 +1,7 @@
 package auth
 
 import (
-	exported2 "github.com/gatechain/gatechainsdk/gatechain/auth/exported"
+	"github.com/gatechain/gatechainsdk/gatechain/auth/exported"
 	sdk "github.com/gatechain/gatechainsdk/gatechain/types"
 )
 
@@ -21,31 +21,10 @@ func NewQueryAccountParams(addr sdk.AccAddress) QueryAccountParams {
 }
 
 type BaseAccountResp struct {
-	exported2.VaultAccount `json:"account_field" yaml:"account_field"`
-	AccountType            uint8 `json:"account_type" yaml:"account_type"`
-}
-type BaseEvmAccountResp struct {
-	exported2.Account `json:"account_field" yaml:"account_field"`
-	AccountType       uint8 `json:"account_type" yaml:"account_type"`
+	exported.VaultAccount `json:"account_field" yaml:"account_field"`
+	AccountType           uint8 `json:"account_type" yaml:"account_type"`
 }
 
 func (bar BaseAccountResp) GetAccountType() uint8 {
 	return bar.AccountType
-}
-
-// TODO FIXME
-func GetAccountRespFromVault(account exported2.Account) exported2.Account {
-	vault, ok := account.(exported2.VaultAccount)
-	if ok {
-		return &BaseAccountResp{
-			VaultAccount: vault,
-			AccountType:  vault.GetAccountType(),
-		}
-	} else {
-		return &BaseEvmAccountResp{
-			Account:     account,
-			AccountType: sdk.EvmStandardAccount,
-		}
-	}
-
 }

@@ -2,19 +2,16 @@ package auth
 
 import (
 	"encoding/json"
-	"fmt"
-	"github.com/gatechain/crypto"
-	"github.com/gatechain/crypto/multisig"
-	"github.com/gatechain/crypto/tmhash"
-	"github.com/gatechain/gatechainsdk/gatechain/types"
 
-	yaml "gopkg.in/yaml.v2"
+	"github.com/gatechain/crypto"
+	"github.com/gatechain/crypto/tmhash"
+
+	"github.com/gatechain/gatechainsdk/gatechain/codec"
+	"github.com/gatechain/gatechainsdk/gatechain/types"
 )
 
 var (
 	_ types.Tx = (*StdTx)(nil)
-
-	maxGasWanted = uint64((1 << 63) - 1)
 )
 
 // StdTx is a standard way to wrap a Msg with Fee and Signatures.
@@ -41,60 +38,6 @@ func NewStdTx(msgs []types.Msg, fee StdFee, sigs []StdSignature, memo string, no
 
 // GetMsgs returns the all the transaction's messages.
 func (tx StdTx) GetMsgs() []types.Msg { return tx.Msgs }
-
-// ValidateBasic does a simple and lightweight validation check that doesn't
-// require access to any other information.
-func (tx StdTx) ValidateBasic() types.Error {
-	if msgs := tx.GetMsgs(); len(msgs) > 0 {
-		if typ := msgs[0].Type(); typ == "ethereum" || typ == "ethermint" {
-			return nil
-		}
-	}
-
-	stdSigs := tx.GetSignatures()
-
-	if tx.Fee.Gas > maxGasWanted {
-		return types.ErrGasOverflow(fmt.Sprintf("invalid gas supplied; %d > %d", tx.Fee.Gas, maxGasWanted))
-	}
-	if tx.Fee.Amount.IsAnyNegative() {
-		return types.ErrInsufficientFee(fmt.Sprintf("invalid fee %s amount provided", tx.Fee.Amount))
-	}
-	if len(stdSigs) == 0 {
-		return types.ErrNoSignatures("no signers")
-	}
-	if len(stdSigs) != len(tx.GetSigners()) {
-		return types.ErrUnauthorized("wrong number of signers")
-	}
-
-	if len(tx.ValidHeight) < 2 {
-		return types.ErrInvalidExpireHeight("expire height and valid height must set")
-	}
-
-	if tx.ValidHeight[0] < 0 || tx.ValidHeight[1] <= 0 {
-		return types.ErrInvalidExpireHeight("expire height must lg 0")
-	}
-
-	if tx.ValidHeight[0] > tx.ValidHeight[1] {
-		return types.ErrInvalidExpireHeight("expire height must lg start height")
-	}
-
-	return nil
-}
-
-// CountSubKeys counts the total number of keys for a multi-sig public key.
-func CountSubKeys(pub crypto.PubKey) int {
-	v, ok := pub.(multisig.PubKeyMultisigThreshold)
-	if !ok {
-		return 1
-	}
-
-	numKeys := 0
-	for _, subkey := range v.PubKeys {
-		numKeys += CountSubKeys(subkey)
-	}
-
-	return numKeys
-}
 
 // GetSigners returns the addresses that must sign the transaction.
 // Addresses are returned in a deterministic order.
@@ -128,12 +71,6 @@ func (tx StdTx) GetMemo() string { return tx.Memo }
 // .Empty().
 func (tx StdTx) GetSignatures() []StdSignature { return tx.Signatures }
 
-// GetNonce returns the nonce
-func (tx StdTx) GetNonces() [][]byte { return tx.Nonces }
-
-// GetNonce returns the nonce
-func (tx StdTx) GetExpireHeight() []uint64 { return tx.ValidHeight }
-
 //__________________________________________________________
 
 // StdFee includes the amount of coins paid in fees and the maximum
@@ -166,15 +103,6 @@ func (fee StdFee) Bytes() []byte {
 		panic(err)
 	}
 	return bz
-}
-
-// GasPrices returns the gas prices for a StdFee.
-//
-// NOTE: The gas prices returned are not the true gas prices that were
-// originally part of the submitted transaction because the fee is computed
-// as fee = ceil(gasWanted * gasPrices).
-func (fee StdFee) GasPrices() types.DecCoins {
-	return types.NewDecCoins(fee.Amount).QuoDec(types.NewDec(int64(fee.Gas)))
 }
 
 //__________________________________________________________
@@ -221,31 +149,9 @@ type StdSignature struct {
 	Signature     []byte                          `json:"signature" yaml:"signature"`
 }
 
-// MarshalYAML returns the YAML representation of the signature.
-func (ss StdSignature) MarshalYAML() (interface{}, error) {
-	var (
-		bz     []byte
-		pubkey string
-		err    error
-	)
-
-	if ss.PubKey != nil {
-		pubkey, err = types.Bech32ifyAccPub(ss.PubKey)
-		if err != nil {
-			return nil, err
-		}
+// DefaultTxEncoder logic for standard transaction encoding
+func DefaultTxEncoder(cdc *codec.Codec) types.TxEncoder {
+	return func(tx types.Tx) ([]byte, error) {
+		return cdc.MarshalBinaryLengthPrefixed(tx)
 	}
-
-	bz, err = yaml.Marshal(struct {
-		PubKey    string
-		Signature string
-	}{
-		PubKey:    pubkey,
-		Signature: fmt.Sprintf("%s", ss.Signature),
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return string(bz), err
 }

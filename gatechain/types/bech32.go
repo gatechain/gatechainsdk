@@ -1,12 +1,11 @@
 package types
 
 import (
-	"cosmossdk.io/errors"
-	"encoding/hex"
-	errors2 "errors"
 	"fmt"
 	"strings"
 	"sync"
+
+	cosmossdk_errors "cosmossdk.io/errors"
 )
 
 // Config is the structure that holds the SDK configuration parameters.
@@ -44,87 +43,11 @@ var (
 		fullFundraiserPath: FullFundraiserPath,
 		txEncoder:          nil,
 	}
-	ErrEmptyHexAddress = errors2.New("decoding address from hex string failed: empty address")
 )
 
 // GetConfig returns the config instance for the SDK.
 func GetConfig() *Config {
 	return sdkConfig
-}
-
-func (config *Config) assertNotSealed() {
-	config.mtx.Lock()
-	defer config.mtx.Unlock()
-
-	if config.sealed {
-		panic("Config is sealed")
-	}
-}
-
-// SetBech32PrefixForAccount builds the Config with Bech32 addressPrefix and publKeyPrefix for accounts
-// and returns the config instance
-func (config *Config) SetBech32PrefixForAccount(addressPrefix, pubKeyPrefix string, vaultPrefix, vaultPubKeyPrefix string,
-	multiSigPrefix, multiSigPubKeyPrefix string, multiSigVaultPrefix, multiSigVaultPubKeyPrefix string) {
-	config.assertNotSealed()
-	config.bech32AddressPrefix["account_addr"] = addressPrefix
-	config.bech32AddressPrefix["account_pub"] = pubKeyPrefix
-	config.bech32AddressPrefix["vault_addr"] = vaultPrefix
-	config.bech32AddressPrefix["vault_pub"] = vaultPubKeyPrefix
-	config.bech32AddressPrefix["multi_sig_addr"] = multiSigPrefix
-	config.bech32AddressPrefix["multi_sig_pub"] = multiSigPubKeyPrefix
-	config.bech32AddressPrefix["multi_sig_vault_addr"] = multiSigVaultPrefix
-	config.bech32AddressPrefix["multi_sig_vault_pub"] = multiSigVaultPubKeyPrefix
-}
-
-// SetBech32PrefixForValidator builds the Config with Bech32 addressPrefix and publKeyPrefix for validators
-//
-//	and returns the config instance
-func (config *Config) SetBech32PrefixForValidator(addressPrefix, pubKeyPrefix string) {
-	config.assertNotSealed()
-	config.bech32AddressPrefix["validator_addr"] = addressPrefix
-	config.bech32AddressPrefix["validator_pub"] = pubKeyPrefix
-}
-
-// SetBech32PrefixForConsensusNode builds the Config with Bech32 addressPrefix and publKeyPrefix for consensus nodes
-// and returns the config instance
-func (config *Config) SetBech32PrefixForConsensusNode(addressPrefix, pubKeyPrefix string) {
-	config.assertNotSealed()
-	config.bech32AddressPrefix["consensus_addr"] = addressPrefix
-	config.bech32AddressPrefix["consensus_pub"] = pubKeyPrefix
-}
-
-// SetTxEncoder builds the Config with TxEncoder used to marshal StdTx to bytes
-func (config *Config) SetTxEncoder(encoder TxEncoder) {
-	config.assertNotSealed()
-	config.txEncoder = encoder
-}
-
-// SetAddressVerifier builds the Config with the provided function for verifying that addresses
-// have the correct format
-func (config *Config) SetAddressVerifier(addressVerifier func([]byte) error) {
-	config.assertNotSealed()
-	config.addressVerifier = addressVerifier
-}
-
-// Set the BIP-0044 CoinType code on the config
-func (config *Config) SetCoinType(coinType uint32) {
-	config.assertNotSealed()
-	config.coinType = coinType
-}
-
-// Set the FullFundraiserPath (BIP44Prefix) on the config
-func (config *Config) SetFullFundraiserPath(fullFundraiserPath string) {
-	config.assertNotSealed()
-	config.fullFundraiserPath = fullFundraiserPath
-}
-
-// Seal seals the config such that the config state could not be modified further
-func (config *Config) Seal() *Config {
-	config.mtx.Lock()
-	defer config.mtx.Unlock()
-
-	config.sealed = true
-	return config
 }
 
 // GetBech32AccountAddrPrefix returns the Bech32 prefix for account address
@@ -152,49 +75,14 @@ func (config *Config) GetBech32ValidatorAddrPrefix() string {
 	return config.bech32AddressPrefix["validator_addr"]
 }
 
-// GetBech32ConsensusAddrPrefix returns the Bech32 prefix for consensus node address
-func (config *Config) GetBech32ConsensusAddrPrefix() string {
-	return config.bech32AddressPrefix["consensus_addr"]
-}
-
 // GetBech32AccountPubPrefix returns the Bech32 prefix for account public key
 func (config *Config) GetBech32AccountPubPrefix() string {
 	return config.bech32AddressPrefix["account_pub"]
 }
 
-// GetBech32VaultAccountPubPrefix returns the Bech32 prefix for vault account public key
-func (config *Config) GetBech32VaultAccountPubPrefix() string {
-	return config.bech32AddressPrefix["vault_pub"]
-}
-
-// GetBech32MultiSigAccountPubPrefix returns the Bech32 prefix for multi sig account public key
-func (config *Config) GetBech32MultiSigAccountPubPrefix() string {
-	return config.bech32AddressPrefix["multi_sig_pub"]
-}
-
-// GetBech32MultiSigVaultAccountPubPrefix returns the Bech32 prefix for multi sig vault account public key
-func (config *Config) GetBech32MultiSigVaultAccountPubPrefix() string {
-	return config.bech32AddressPrefix["multi_sig_vault_pub"]
-}
-
-// GetBech32ValidatorPubPrefix returns the Bech32 prefix for validator public key
-func (config *Config) GetBech32ValidatorPubPrefix() string {
-	return config.bech32AddressPrefix["validator_pub"]
-}
-
 // GetBech32ConsensusPubPrefix returns the Bech32 prefix for consensus node public key
 func (config *Config) GetBech32ConsensusPubPrefix() string {
 	return config.bech32AddressPrefix["consensus_pub"]
-}
-
-// GetBech32ConsensusPubPrefix returns the Bech32 prefix for consensus node public key
-func (config *Config) GetBech32EthereumPubPrefix() string {
-	return config.bech32AddressPrefix["ethereum_pub"]
-}
-
-// GetTxEncoder return function to encode transactions
-func (config *Config) GetTxEncoder() TxEncoder {
-	return config.txEncoder
 }
 
 // GetAddressVerifier returns the function to verify that addresses have the correct format
@@ -207,16 +95,11 @@ func (config *Config) GetCoinType() uint32 {
 	return config.coinType
 }
 
-// Get the FullFundraiserPath (BIP44Prefix) on the config
-func (config *Config) GetFullFundraiserPath() string {
-	return config.fullFundraiserPath
-}
-
 // ConvertAndEncode converts from a base64 encoded byte string to base32 encoded byte string and then to bech32
 func ConvertAndEncode(hrp string, data []byte) (string, error) {
 	converted, err := ConvertBits(data, 8, 5, true)
 	if err != nil {
-		return "", errors.Wrap(err, "encoding bech32 failed")
+		return "", cosmossdk_errors.Wrap(err, "encoding bech32 failed")
 	}
 	return Encode(hrp, converted)
 
@@ -377,11 +260,11 @@ func ConvertBits(data []byte, fromBits, toBits uint8, pad bool) ([]byte, error) 
 func DecodeAndConvert(bech string) (string, []byte, error) {
 	hrp, data, err := Decode(bech)
 	if err != nil {
-		return "", nil, errors.Wrap(err, "decoding bech32 failed")
+		return "", nil, cosmossdk_errors.Wrap(err, "decoding bech32 failed")
 	}
 	converted, err := ConvertBits(data, 5, 8, false)
 	if err != nil {
-		return "", nil, errors.Wrap(err, "decoding bech32 failed")
+		return "", nil, cosmossdk_errors.Wrap(err, "decoding bech32 failed")
 	}
 	return hrp, converted, nil
 }
@@ -475,22 +358,4 @@ func toBytes(chars string) ([]byte, error) {
 		decoded = append(decoded, byte(index))
 	}
 	return decoded, nil
-}
-
-// AccAddressFromHexUnsafe creates an AccAddress from a HEX-encoded string.
-//
-// Note, this function is considered unsafe as it may produce an AccAddress from
-// otherwise invalid input, such as a transaction hash. Please use
-// AccAddressFromBech32.
-func AccAddressFromHexUnsafe(address string) (addr AccAddress, err error) {
-	bz, err := addressBytesFromHexString(address)
-	return AccAddress(bz), err
-}
-
-func addressBytesFromHexString(address string) ([]byte, error) {
-	if len(address) == 0 {
-		return nil, ErrEmptyHexAddress
-	}
-
-	return hex.DecodeString(address)
 }

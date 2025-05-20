@@ -3,46 +3,65 @@ package account
 import (
 	"fmt"
 
-	"github.com/gatechain/gatechainsdk/api/utils"
-	auth2 "github.com/gatechain/gatechainsdk/gatechain/auth"
+	"github.com/gatechain/gatechainsdk/gatechain/auth"
 	"github.com/gatechain/gatechainsdk/gatechain/context"
 	"github.com/gatechain/gatechainsdk/gatechain/types"
 )
 
-func CreateAccount(name string, rootDir string) {
-	auth2.CreateAccount(name, rootDir)
+type Service struct {
+	ctx *context.NodeVaultQuerierImpl
 }
 
-func QueryAccount(ctx *context.NodeVaultQuerierImpl, addr string) {
+func NewService(ctx *context.NodeVaultQuerierImpl) *Service {
+	return &Service{ctx: ctx}
+}
 
+func (s *Service) CreateAccount(name string, rootDir string) {
+	auth.CreateAccount(name, rootDir)
+}
+
+func (s *Service) QueryAccount(addr string) {
+
+	key, _, err := types.AccAddressTypeFromBech32(addr)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	retriever := auth.NewVaultRetriever(s.ctx)
+
+	if err := retriever.EnsureExists(key); err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	account, height, err := retriever.GetAccountWithHeight(key)
+	s.ctx = s.ctx.WithHeight(height)
+	err = account.MergeRevocableWei(uint64(s.ctx.Height))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	s.ctx.PrintOutput(account)
+}
+
+func (s *Service) GetAccountBlance(addr string) {
+
+	retriever := auth.NewVaultRetriever(s.ctx)
 	key, err := types.AccAddressFromBech32(addr)
 	if err != nil {
 		fmt.Println(err)
-	}
-	retriever := auth2.NewAccountRetriever(ctx, ctx.GetCodec())
-	account, _, err := retriever.GetAccountWithHeight(key)
-	if err != nil {
-		fmt.Println(err)
-	} else {
-		utils.JsonOutPut(account, ctx.GetCodec())
-	}
-}
-
-func GetAccountBlance(ctx *context.NodeVaultQuerierImpl, addr string) {
-
-	retriever := auth2.NewVaultRetriever(ctx)
-	key, err := types.AccAddressFromBech32(addr)
-	if err != nil {
-		fmt.Println(err)
+		return
 	}
 	if err := retriever.EnsureExists(key); err != nil {
 		fmt.Println(err)
+		return
 	}
 
 	vault, height, err := retriever.GetAccountWithHeight(key)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
-	ctx = ctx.WithHeight(height)
-	ctx.PrintOutput(vault.GetCoins())
+	s.ctx = s.ctx.WithHeight(height)
+	s.ctx.PrintOutput(vault.GetCoins())
 }

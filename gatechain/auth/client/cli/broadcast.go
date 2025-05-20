@@ -2,14 +2,15 @@ package cli
 
 import (
 	"fmt"
-	auth2 "github.com/gatechain/gatechainsdk/gatechain/auth"
+
+	"github.com/gatechain/gatechainsdk/gatechain/auth"
 	"github.com/gatechain/gatechainsdk/gatechain/context"
 	"github.com/gatechain/gatechainsdk/gatechain/types"
 )
 
-// GetBroadcastCommand returns the tx broadcast command.
-func GetBroadcastCommand(cliCtx *context.NodeVaultQuerierImpl, filename string) {
-	stdTx, err := auth2.ReadStdTxFromFile(cliCtx.Codec, filename)
+// BroadcastSignTx returns the tx broadcast command.
+func BroadcastSignTx(cliCtx *context.NodeVaultQuerierImpl, filename string) {
+	stdTx, err := auth.ReadStdTxFromFile(cliCtx.Codec, filename)
 	if err != nil {
 		return
 	}
@@ -20,9 +21,13 @@ func GetBroadcastCommand(cliCtx *context.NodeVaultQuerierImpl, filename string) 
 	}
 
 	res, err := cliCtx.Client.BroadcastTx(txBytes)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	fmt.Println(res)
 	resPos := types.NewResponseFormatBroadcastTx(&res)
-	TxResponse := auth2.ReConvertTxResponseFromData(cliCtx.Codec, resPos)
-	TxResponse = auth2.ConvertTxHashPrefixForTxResponse(TxResponse)
+	TxResponse := auth.ReConvertTxResponseFromData(cliCtx.Codec, resPos)
+	TxResponse = auth.ConvertTxHashPrefixForTxResponse(TxResponse)
 	cliCtx.PrintOutput(TxResponse)
 }

@@ -7,7 +7,6 @@ import (
 // Register concrete types on codec codec
 func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(MsgSend{}, "MsgSend", nil)
-	cdc.RegisterConcrete(MsgMultiSend{}, "MsgMultiSend", nil)
 }
 
 // module codec

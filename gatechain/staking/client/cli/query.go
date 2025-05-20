@@ -4,306 +4,333 @@ import (
 	"fmt"
 
 	"github.com/gatechain/gatechainsdk/gatechain/context"
-	types3 "github.com/gatechain/gatechainsdk/gatechain/staking/types"
-	"github.com/gatechain/gatechainsdk/gatechain/types"
+	"github.com/gatechain/gatechainsdk/gatechain/staking/types"
+	sdk "github.com/gatechain/gatechainsdk/gatechain/types"
 )
 
-const (
-	flagPage  = "page"
-	flagLimit = "limit"
-)
+// QueryValidatorUnbondingDelegations implements the query all unbonding delegatations from a validator command.
+func QueryValidatorUnbondingDelegations(ctx *context.NodeVaultQuerierImpl, ValidatorAddr string) {
 
-var (
-	API_TOKEN = "a7de43d74b7323e82f6c561336b0d5b01d7f452e1cf4af23cd3e30f8b8582383"
-	endpoint  = "http://124.243.187.49:80"
-)
-
-// GetCmdQueryValidatorUnbondingDelegations implements the query all unbonding delegatations from a validator command.
-func GetCmdQueryValidatorUnbondingDelegations(ctx *context.NodeVaultQuerierImpl, queryRoute, ValidatorAddr string) {
-
-	ValidatorAccAddr, err := types.ValAddressFromBech32(ValidatorAddr)
+	ValidatorAccAddr, err := sdk.ValAddressFromBech32(ValidatorAddr)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	bz, err := ctx.GetCodec().MarshalJSON(types3.NewQueryValidatorParams(ValidatorAccAddr))
+	bz, err := ctx.GetCodec().MarshalJSON(types.NewQueryValidatorParams(ValidatorAccAddr))
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	route := fmt.Sprintf("custom/%s/%s", queryRoute, types3.QueryValidatorUnbondingDelegations)
+	route := fmt.Sprintf("custom/%s/%s", types.ModuleName, types.QueryValidatorUnbondingDelegations)
 	res, _, err := ctx.QueryWithData(route, bz)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	var ubds types3.UnbondingDelegations
+	var ubds types.UnbondingDelegations
 	ctx.GetCodec().MustUnmarshalJSON(res, &ubds)
 	ctx.PrintOutput(ubds)
 }
 
-// GetCmdQueryValidatorRedelegations implements the query all redelegatations
+// QueryValidatorRedelegations implements the query all redelegatations
 // from a validator command.
-func GetCmdQueryValidatorRedelegations(ctx *context.NodeVaultQuerierImpl, queryRoute, SrcValidatorAddr string) {
-	SrcValidatorValAddr, err := types.ValAddressFromBech32(SrcValidatorAddr)
+func QueryValidatorRedelegations(ctx *context.NodeVaultQuerierImpl, SrcValidatorAddr string) {
+	SrcValidatorValAddr, err := sdk.ValAddressFromBech32(SrcValidatorAddr)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	bz, err := ctx.GetCodec().MarshalJSON(types3.QueryRedelegationParams{SrcValidatorAddr: SrcValidatorValAddr})
+	bz, err := ctx.GetCodec().MarshalJSON(types.QueryRedelegationParams{SrcValidatorAddr: SrcValidatorValAddr})
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	route := fmt.Sprintf("custom/%s/%s", queryRoute, types3.QueryRedelegations)
+	route := fmt.Sprintf("custom/%s/%s", types.ModuleName, types.QueryRedelegations)
 	res, _, err := ctx.QueryWithData(route, bz)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	var resp types3.RedelegationResponses
+	var resp types.RedelegationResponses
 	if err := ctx.GetCodec().UnmarshalJSON(res, &resp); err != nil {
 		fmt.Println(err)
+		return
 	}
 	ctx.PrintOutput(resp)
 }
 
-// GetCmdQueryDelegation the query delegation command.
-func GetCmdQueryDelegation(ctx *context.NodeVaultQuerierImpl, queryRoute, delegatorAddr, validatorAddr string) {
+// QueryDelegation the query delegation command.
+func QueryDelegation(ctx *context.NodeVaultQuerierImpl, delegatorAddr, validatorAddr string) {
 
-	delegatorAccAddr, err := types.AccAddressFromBech32(delegatorAddr)
+	delegatorAccAddr, err := sdk.AccAddressFromBech32(delegatorAddr)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	validatorAccAddr, err := types.ValAddressFromBech32(validatorAddr)
+	validatorAccAddr, err := sdk.ValAddressFromBech32(validatorAddr)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	bz, err := ctx.GetCodec().MarshalJSON(types3.NewQueryBondsParams(delegatorAccAddr, validatorAccAddr))
+	bz, err := ctx.GetCodec().MarshalJSON(types.NewQueryBondsParams(delegatorAccAddr, validatorAccAddr))
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	route := fmt.Sprintf("custom/%s/%s", queryRoute, types3.QueryDelegation)
+	route := fmt.Sprintf("custom/%s/%s", types.ModuleName, types.QueryDelegation)
 	res, _, err := ctx.QueryWithData(route, bz)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	var resp types3.DelegationResponse
+	var resp types.DelegationResponse
 	if err := ctx.GetCodec().UnmarshalJSON(res, &resp); err != nil {
 		fmt.Println(err)
+		return
 	}
 
 	ctx.PrintOutput(resp)
 }
 
-// GetCmdQueryDelegations implements the command to query all the delegations
+// QueryDelegations implements the command to query all the delegations
 // made from one delegator.
-func GetCmdQueryDelegations(ctx *context.NodeVaultQuerierImpl, queryRoute, delegatorAddr string) {
-	delegatorAccAddr, err := types.AccAddressFromBech32(delegatorAddr)
+func QueryDelegations(ctx *context.NodeVaultQuerierImpl, delegatorAddr string) {
+	delegatorAccAddr, err := sdk.AccAddressFromBech32(delegatorAddr)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	bz, err := ctx.GetCodec().MarshalJSON(types3.NewQueryDelegatorParams(delegatorAccAddr))
+	bz, err := ctx.GetCodec().MarshalJSON(types.NewQueryDelegatorParams(delegatorAccAddr))
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	route := fmt.Sprintf("custom/%s/%s", queryRoute, types3.QueryDelegatorDelegations)
+	route := fmt.Sprintf("custom/%s/%s", types.ModuleName, types.QueryDelegatorDelegations)
 	res, _, err := ctx.QueryWithData(route, bz)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	var resp types3.DelegationResponses
+	var resp types.DelegationResponses
 	if err := ctx.GetCodec().UnmarshalJSON(res, &resp); err != nil {
 		fmt.Println(err)
+		return
 	}
 	ctx.PrintOutput(resp)
 }
 
-// GetCmdQueryValidatorDelegations implements the command to query all the
+// QueryValidatorDelegations implements the command to query all the
 // delegations to a specific validator.
 // , cdc *codec.Codec
-func GetCmdQueryValidatorDelegations(ctx *context.NodeVaultQuerierImpl, queryRoute, delegatorAddr string) {
+func QueryValidatorDelegations(ctx *context.NodeVaultQuerierImpl, delegatorAddr string) {
 
-	delegatorAccAddr, err := types.ValAddressFromBech32(delegatorAddr)
+	delegatorAccAddr, err := sdk.ValAddressFromBech32(delegatorAddr)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	bz, err := ctx.GetCodec().MarshalJSON(types3.NewQueryValidatorParams(delegatorAccAddr))
+	bz, err := ctx.GetCodec().MarshalJSON(types.NewQueryValidatorParams(delegatorAccAddr))
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	route := fmt.Sprintf("custom/%s/%s", queryRoute, types3.QueryValidatorDelegations)
+	route := fmt.Sprintf("custom/%s/%s", types.ModuleName, types.QueryValidatorDelegations)
 	res, _, err := ctx.QueryWithData(route, bz)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	var resp types3.DelegationResponses
+	var resp types.DelegationResponses
 	if err := ctx.GetCodec().UnmarshalJSON(res, &resp); err != nil {
 		fmt.Println(err)
+		return
 	}
 	ctx.PrintOutput(resp)
 }
 
-// GetCmdQueryUnbondingDelegation implements the command to query a single
+// QueryUnbondingDelegation implements the command to query a single
 // unbonding-delegation record.
-func GetCmdQueryUnbondingDelegation(ctx *context.NodeVaultQuerierImpl, queryRoute, delegatorAddr, validatorAddr string) {
+func QueryUnbondingDelegation(ctx *context.NodeVaultQuerierImpl, delegatorAddr, validatorAddr string) {
 
-	validatorAccAddr, err := types.ValAddressFromBech32(validatorAddr)
+	validatorAccAddr, err := sdk.ValAddressFromBech32(validatorAddr)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	delAccAddr, err := types.AccAddressFromBech32(delegatorAddr)
+	delAccAddr, err := sdk.AccAddressFromBech32(delegatorAddr)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	bz, err := ctx.GetCodec().MarshalJSON(types3.NewQueryBondsParams(delAccAddr, validatorAccAddr))
+	bz, err := ctx.GetCodec().MarshalJSON(types.NewQueryBondsParams(delAccAddr, validatorAccAddr))
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	route := fmt.Sprintf("custom/%s/%s", queryRoute, types3.QueryUnbondingDelegation)
+	route := fmt.Sprintf("custom/%s/%s", types.ModuleName, types.QueryUnbondingDelegation)
 	res, _, err := ctx.QueryWithData(route, bz)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	var resp types3.UnbondingDelegation
+	var resp types.UnbondingDelegation
 	if err := ctx.GetCodec().UnmarshalJSON(res, &resp); err != nil {
 		fmt.Println(err)
+		return
 	}
 	ctx.PrintOutput(resp)
 }
 
-// GetCmdQueryUnbondingDelegations implements the command to query all the
+// QueryUnbondingDelegations implements the command to query all the
 // unbonding-delegation records for a delegator.
-func GetCmdQueryUnbondingDelegations(ctx *context.NodeVaultQuerierImpl, queryRoute, delegatorAddr string) {
+func QueryUnbondingDelegations(ctx *context.NodeVaultQuerierImpl, delegatorAddr string) {
 
-	delegatorAccAddr, err := types.AccAddressFromBech32(delegatorAddr)
+	delegatorAccAddr, err := sdk.AccAddressFromBech32(delegatorAddr)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	bz, err := ctx.GetCodec().MarshalJSON(types3.NewQueryDelegatorParams(delegatorAccAddr))
+	bz, err := ctx.GetCodec().MarshalJSON(types.NewQueryDelegatorParams(delegatorAccAddr))
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	route := fmt.Sprintf("custom/%s/%s", queryRoute, types3.QueryDelegatorUnbondingDelegations)
+	route := fmt.Sprintf("custom/%s/%s", types.ModuleName, types.QueryDelegatorUnbondingDelegations)
 	res, _, err := ctx.QueryWithData(route, bz)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	var resp types3.UnbondingDelegations
+	var resp types.UnbondingDelegations
 	if err := ctx.GetCodec().UnmarshalJSON(res, &resp); err != nil {
 		fmt.Println(err)
+		return
 	}
 	ctx.PrintOutput(resp)
 }
 
-// GetCmdQueryRedelegation implements the command to query a single
-// redelegation record.
-// gatecli staking redelegation gt11zzu8glwr7mc5t7w2tqtwuvn6c3scd7x8hs7f4ud7379r7xknkyxsx4pnhnh50v9t7ekkm4
-// gt11zzu8glwr7mc5t7w2tqtwuvn6c3scd7x8hs7f4ud7379r7xknkyxsx4pnhnh50v9t7ekkm4
-// gt11380m6lv6xr9fphasqunurpfus50h6eu4vgy8cvhrzayut9xkhju2zvfmergng55pee48u9
-func GetCmdQueryRedelegation(ctx *context.NodeVaultQuerierImpl, queryRoute string, args []string) {
+func QueryRedelegation(ctx *context.NodeVaultQuerierImpl, args []string) {
 
-	delAddr, err := types.AccAddressFromBech32(args[0])
+	delAddr, err := sdk.AccAddressFromBech32(args[0])
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	valSrcAddr, err := types.ValAddressFromBech32(args[1])
+	valSrcAddr, err := sdk.ValAddressFromBech32(args[1])
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	valDstAddr, err := types.ValAddressFromBech32(args[2])
+	valDstAddr, err := sdk.ValAddressFromBech32(args[2])
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	bz, err := ctx.GetCodec().MarshalJSON(types3.NewQueryRedelegationParams(delAddr, valSrcAddr, valDstAddr))
+	bz, err := ctx.GetCodec().MarshalJSON(types.NewQueryRedelegationParams(delAddr, valSrcAddr, valDstAddr))
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	route := fmt.Sprintf("custom/%s/%s", queryRoute, types3.QueryRedelegations)
+	route := fmt.Sprintf("custom/%s/%s", types.ModuleName, types.QueryRedelegations)
 	res, _, err := ctx.QueryWithData(route, bz)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	var resp types3.RedelegationResponses
+	var resp types.RedelegationResponses
 	if err := ctx.GetCodec().UnmarshalJSON(res, &resp); err != nil {
 		fmt.Println(err)
+		return
 	}
 	ctx.PrintOutput(resp)
 }
 
-// GetCmdQueryRedelegations implements the command to query all the
+// QueryRedelegations implements the command to query all the
 // redelegation records for a delegator.
-func GetCmdQueryRedelegations(ctx *context.NodeVaultQuerierImpl, queryRoute, delegatorAddr string) {
-	delAddr, err := types.AccAddressFromBech32(delegatorAddr)
+func QueryRedelegations(ctx *context.NodeVaultQuerierImpl, delegatorAddr string) {
+	delAddr, err := sdk.AccAddressFromBech32(delegatorAddr)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	bz, err := ctx.GetCodec().MarshalJSON(types3.QueryRedelegationParams{DelegatorAddr: delAddr})
+	bz, err := ctx.GetCodec().MarshalJSON(types.QueryRedelegationParams{DelegatorAddr: delAddr})
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	route := fmt.Sprintf("custom/%s/%s", queryRoute, types3.QueryRedelegations)
+	route := fmt.Sprintf("custom/%s/%s", types.ModuleName, types.QueryRedelegations)
 	res, _, err := ctx.QueryWithData(route, bz)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	var resp types3.RedelegationResponses
+	var resp types.RedelegationResponses
 	if err := ctx.GetCodec().UnmarshalJSON(res, &resp); err != nil {
 		fmt.Println(err)
+		return
 	}
 	ctx.PrintOutput(resp)
 }
 
-// GetCmdQueryPool implements the pool query command.
-func GetCmdQueryPool(ctx *context.NodeVaultQuerierImpl, storeName string) {
+// QueryPool implements the pool query command.
+func QueryPool(ctx *context.NodeVaultQuerierImpl) {
 
-	bz, _, err := ctx.QueryWithData(fmt.Sprintf("custom/%s/pool", storeName), nil)
+	bz, _, err := ctx.QueryWithData(fmt.Sprintf("custom/%s/pool", types.ModuleName), nil)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	var pool types3.Pool
+	var pool types.Pool
 	if err := ctx.GetCodec().UnmarshalJSON(bz, &pool); err != nil {
 		fmt.Println(err)
+		return
 	}
 
 	ctx.PrintOutput(pool)
 }
 
-// GetCmdQueryParams implements the params query command.
-func GetCmdQueryParams(ctx *context.NodeVaultQuerierImpl, storeName string) {
-	route := fmt.Sprintf("custom/%s/%s", storeName, types3.QueryParameters)
+// QueryParams implements the params query command.
+func QueryParams(ctx *context.NodeVaultQuerierImpl) {
+	route := fmt.Sprintf("custom/%s/%s", types.ModuleName, types.QueryParameters)
 	bz, _, err := ctx.QueryWithData(route, nil)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	var params types3.Params
+	var params types.Params
 	ctx.GetCodec().MustUnmarshalJSON(bz, &params)
 	ctx.PrintOutput(params)
 }

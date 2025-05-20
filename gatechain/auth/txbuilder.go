@@ -3,14 +3,13 @@ package auth
 import (
 	"errors"
 	"fmt"
-	"github.com/gatechain/gatechainsdk/api/common"
+	gmhash "github.com/gatechain/crypto"
+
+	"github.com/gatechain/gatechainsdk/common"
 	"github.com/gatechain/gatechainsdk/gatechain/codec"
 	"github.com/gatechain/gatechainsdk/gatechain/crypto"
 	crkeys "github.com/gatechain/gatechainsdk/gatechain/crypto/keys"
 	"github.com/gatechain/gatechainsdk/gatechain/types"
-	"strings"
-
-	gmhash "github.com/gatechain/crypto"
 )
 
 // TxBuilder implements a transaction context created in SDK modules.
@@ -29,30 +28,9 @@ type TxBuilder struct {
 	validHeight        []uint64
 }
 
-// NewTxBuilder returns a new initialized TxBuilder.
-func NewTxBuilder(
-	txEncoder types.TxEncoder, nonce []byte, gas uint64, gasAdj float64,
-	simulateAndExecute bool, chainID, memo string, fees types.Coins, gasPrices types.DecCoins, validHeight []uint64,
-) TxBuilder {
-
-	return TxBuilder{
-		txEncoder:          txEncoder,
-		keybase:            nil,
-		nonce:              nonce,
-		gas:                gas,
-		gasAdjustment:      gasAdj,
-		simulateAndExecute: simulateAndExecute,
-		chainID:            chainID,
-		memo:               memo,
-		fees:               fees,
-		gasPrices:          gasPrices,
-		validHeight:        validHeight,
-	}
-}
-
 // NewTxBuilderFromCLI returns a new initialized TxBuilder with parameters from
 // the command line using Viper.
-func NewTxBuilderFromCLI2(rootDir, fees, chainID string, gas uint64, cdc *codec.Codec) TxBuilder {
+func NewTxBuilderFromCLI(rootDir, fees, chainID string, gas uint64, cdc *codec.Codec) TxBuilder {
 	kb, err := crypto.NewKeyBaseFromDir(rootDir)
 	if err != nil {
 		panic(err)
@@ -65,31 +43,11 @@ func NewTxBuilderFromCLI2(rootDir, fees, chainID string, gas uint64, cdc *codec.
 		nonce:   nonce[:],
 		chainID: chainID,
 	}
-	txbldr = txbldr.WithTxEncoder(types.DefaultTxEncoder(cdc))
+	txbldr = txbldr.WithTxEncoder(DefaultTxEncoder(cdc))
 	txbldr = txbldr.WithFees(fees) //fees "100000000NANOGT"
 	txbldr = txbldr.WithGas(gas)   //gas  200000
 	return txbldr
 }
-
-// NewTxBuilderFromCLI returns a new initialized TxBuilder with parameters from
-// the command line using Viper.
-func NewTxBuilderFromCLI() TxBuilder {
-	kb, err := crypto.NewKeyBaseFromDir(common.RootDir)
-	if err != nil {
-		panic(err)
-	}
-
-	uuid, _ := types.NewV4()
-	nonce := gmhash.Hash(uuid[:])
-	txbldr := TxBuilder{
-		keybase: kb,
-		nonce:   nonce[:],
-	}
-	return txbldr
-}
-
-// TxEncoder returns the transaction encoder
-func (bldr TxBuilder) TxEncoder() types.TxEncoder { return bldr.txEncoder }
 
 // AccountNumber returns the account number
 func (bldr TxBuilder) AccountNumber() uint64 { return bldr.accountNumber }
@@ -113,27 +71,9 @@ func (bldr TxBuilder) Keybase() crkeys.Keybase { return bldr.keybase }
 // using the gas from the simulation results
 func (bldr TxBuilder) SimulateAndExecute() bool { return bldr.simulateAndExecute }
 
-// ChainID returns the chain id
-func (bldr TxBuilder) ChainID() string { return bldr.chainID }
-
-// Memo returns the memo message
-func (bldr TxBuilder) Memo() string { return bldr.memo }
-
-// Fees returns the fees for the transaction
-func (bldr TxBuilder) Fees() types.Coins { return bldr.fees }
-
-// GasPrices returns the gas prices set for the transaction, if any.
-func (bldr TxBuilder) GasPrices() types.DecCoins { return bldr.gasPrices }
-
 // WithTxEncoder returns a copy of the context with an updated codec.
 func (bldr TxBuilder) WithTxEncoder(txEncoder types.TxEncoder) TxBuilder {
 	bldr.txEncoder = txEncoder
-	return bldr
-}
-
-// WithChainID returns a copy of the context with an updated chainID.
-func (bldr TxBuilder) WithChainID(chainID string) TxBuilder {
-	bldr.chainID = chainID
 	return bldr
 }
 
@@ -154,23 +94,6 @@ func (bldr TxBuilder) WithFees(fees string) TxBuilder {
 	return bldr
 }
 
-// WithGasPrices returns a copy of the context with updated gas prices.
-func (bldr TxBuilder) WithGasPrices(gasPrices string) TxBuilder {
-	parsedGasPrices, err := types.ParseDecCoins(gasPrices)
-	if err != nil {
-		panic(err)
-	}
-
-	bldr.gasPrices = parsedGasPrices
-	return bldr
-}
-
-// WithKeybase returns a copy of the context with updated keybase.
-func (bldr TxBuilder) WithKeybase(keybase crkeys.Keybase) TxBuilder {
-	bldr.keybase = keybase
-	return bldr
-}
-
 // WithNonce returns a copy of the context with an updated nonce.
 func (bldr TxBuilder) WithNonce(nonce []byte) TxBuilder {
 	bldr.nonce = nonce
@@ -180,12 +103,6 @@ func (bldr TxBuilder) WithNonce(nonce []byte) TxBuilder {
 // WithExpireHeight returns a copy of the context with an updated nonce.
 func (bldr TxBuilder) WithValidHeight(validHeight []uint64) TxBuilder {
 	bldr.validHeight = validHeight
-	return bldr
-}
-
-// WithMemo returns a copy of the context with an updated memo.
-func (bldr TxBuilder) WithMemo(memo string) TxBuilder {
-	bldr.memo = strings.TrimSpace(memo)
 	return bldr
 }
 

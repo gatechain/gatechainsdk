@@ -4,94 +4,135 @@ import (
 	"fmt"
 	"strconv"
 
-	auth2 "github.com/gatechain/gatechainsdk/gatechain/auth"
+	"github.com/gatechain/gatechainsdk/gatechain/auth"
 	"github.com/gatechain/gatechainsdk/gatechain/context"
-	client2 "github.com/gatechain/gatechainsdk/gatechain/revocable/client"
-	types2 "github.com/gatechain/gatechainsdk/gatechain/revocable/types"
-	types3 "github.com/gatechain/gatechainsdk/gatechain/types"
+	"github.com/gatechain/gatechainsdk/gatechain/revocable/client"
+	"github.com/gatechain/gatechainsdk/gatechain/revocable/types"
+	sdk "github.com/gatechain/gatechainsdk/gatechain/types"
 )
 
-func BroadcastMsgCreateVault(ctx *context.NodeVaultQuerierImpl, txBldr auth2.TxBuilder, from_addr, to_addr, security_addr, delayHeightStr, clearTimeHeightStr, coinsStr, pubkeyStr string) {
+type Service struct {
+	ctx *context.NodeVaultQuerierImpl
+}
 
-	fromAccAddress, _, err := types3.AccAddressTypeFromBech32(from_addr)
+func NewService(ctx *context.NodeVaultQuerierImpl) *Service {
+	return &Service{ctx: ctx}
+}
+
+func (s *Service) BroadcastMsgCreateVault(from_addr, to_addr, security_addr, delayHeightStr, clearTimeHeightStr,
+	coinsStr, pubkeyStr, fees, chainID string, gas uint64) {
+
+	txBldr := auth.NewTxBuilderFromCLI(s.ctx.RootDir, fees, chainID, gas, s.ctx.Codec)
+	txBldr, err := auth.UpdateValidHeight(s.ctx, txBldr)
 	if err != nil {
 		fmt.Println(err)
-	}
-	toAccAddress, _, err := types3.AccAddressTypeFromBech32(to_addr)
-	if err != nil {
-		fmt.Println(err)
+		return
 	}
 
-	securityAccAddress, _, err := types3.AccAddressTypeFromBech32(security_addr)
+	fromAccAddress, _, err := sdk.AccAddressTypeFromBech32(from_addr)
 	if err != nil {
 		fmt.Println(err)
+		return
+	}
+	toAccAddress, _, err := sdk.AccAddressTypeFromBech32(to_addr)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	securityAccAddress, _, err := sdk.AccAddressTypeFromBech32(security_addr)
+	if err != nil {
+		fmt.Println(err)
+		return
 	}
 
 	delayHeight, err := strconv.ParseUint(delayHeightStr, 10, 64)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
 	clearTime, err := strconv.ParseUint(clearTimeHeightStr, 10, 64)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
 	// parse coins trying to be sent
-	coins, err := types3.ParseCoins(coinsStr)
+	coins, err := sdk.ParseCoins(coinsStr)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	msg := types2.NewMsgCreateVault(fromAccAddress, toAccAddress, securityAccAddress, delayHeight, clearTime, coins, pubkeyStr)
+	msg := types.NewMsgCreateVault(fromAccAddress, toAccAddress, securityAccAddress, delayHeight, clearTime, coins, pubkeyStr)
 	fmt.Println(msg)
 
-	txbytes, err := auth2.CompleteAndBroadcastTxCLI(txBldr, ctx, []types3.Msg{msg}, true)
+	txbytes, err := auth.CompleteAndBroadcastTxCLI(txBldr, s.ctx, []sdk.Msg{msg}, true)
 	fmt.Println(txbytes, err)
 }
 
-func BroadcastUpdateClearingHeightTx(ctx *context.NodeVaultQuerierImpl, txBldr auth2.TxBuilder, clearTimeHeight, vaultAddr string) {
+func (s *Service) BroadcastUpdateClearingHeightTx(clearTimeHeight, vaultAddr, fees, chainID string, gas uint64) {
+	txBldr := auth.NewTxBuilderFromCLI(s.ctx.RootDir, fees, chainID, gas, s.ctx.Codec)
+	txBldr, err := auth.UpdateValidHeight(s.ctx, txBldr)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
 	clearTime, err := strconv.ParseUint(clearTimeHeight, 10, 64)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	vaultAccAddress, _, err := types3.AccAddressTypeFromBech32(vaultAddr)
+	vaultAccAddress, _, err := sdk.AccAddressTypeFromBech32(vaultAddr)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
 	// build and sign the transaction, then broadcast to Tendermint
-	msg := types2.NewMsgUpdateClearingHeight(vaultAccAddress, clearTime)
+	msg := types.NewMsgUpdateClearingHeight(vaultAccAddress, clearTime)
 
-	txbytes, err := auth2.CompleteAndBroadcastTxCLI(txBldr, ctx, []types3.Msg{msg}, true)
+	txbytes, err := auth.CompleteAndBroadcastTxCLI(txBldr, s.ctx, []sdk.Msg{msg}, true)
 	fmt.Println(txbytes, err)
 }
 
-func QueryVaultAccount(ctx *context.NodeVaultQuerierImpl, vaultAddr string) {
-	retriever := auth2.NewVaultRetriever(ctx)
-	key, err := types3.AccAddressFromBech32(vaultAddr)
+func (s *Service) QueryVaultAccount(vaultAddr string) {
+	retriever := auth.NewVaultRetriever(s.ctx)
+	key, err := sdk.AccAddressFromBech32(vaultAddr)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 	account, height, err := retriever.GetAccountWithHeight(key)
 	fmt.Println(account, height, err)
 }
 
-func ClearVaultAccountTx(ctx *context.NodeVaultQuerierImpl, txBldr auth2.TxBuilder, from_addr string, vaultAddresses []string) {
-	var vaultAddress []types3.AccAddress
+func (s *Service) ClearVaultAccountTx(fees, chainID string, vaultAddresses []string, gas uint64) {
+	txBldr := auth.NewTxBuilderFromCLI(s.ctx.RootDir, fees, chainID, gas, s.ctx.Codec)
+	txBldr, err := auth.UpdateValidHeight(s.ctx, txBldr)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	var vaultAddress []sdk.AccAddress
 	for i := 0; i < len(vaultAddresses); i++ {
-		address, _, err := types3.AccAddressTypeFromBech32(vaultAddresses[i])
+		address, _, err := sdk.AccAddressTypeFromBech32(vaultAddresses[i])
 		if err != nil {
 			fmt.Println(err)
+			return
 		}
 		vaultAddress = append(vaultAddress, address)
 	}
-	if err := client2.EnsureFromVaultAccount(*ctx); err != nil {
+	if err := client.EnsureFromVaultAccount(*s.ctx); err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	msg := types2.NewMsgClearVaultAccount(ctx.FromAddress, vaultAddress)
-	txbytes, err := auth2.CompleteAndBroadcastTxCLI(txBldr, ctx, []types3.Msg{msg}, true)
+	msg := types.NewMsgClearVaultAccount(s.ctx.FromAddress, vaultAddress)
+	txbytes, err := auth.CompleteAndBroadcastTxCLI(txBldr, s.ctx, []sdk.Msg{msg}, true)
 	fmt.Println(txbytes, err)
 }

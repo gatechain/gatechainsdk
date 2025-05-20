@@ -4,43 +4,44 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"time"
+
 	"github.com/gatechain/gatechainsdk/gatechain/codec"
 	"github.com/gatechain/gatechainsdk/gatechain/context"
 	"github.com/gatechain/gatechainsdk/gatechain/node/appinterface"
 	"github.com/gatechain/gatechainsdk/gatechain/node/basics"
 	"github.com/gatechain/gatechainsdk/gatechain/rpc/spec/v1"
-	types2 "github.com/gatechain/gatechainsdk/gatechain/types"
-	"time"
+	"github.com/gatechain/gatechainsdk/gatechain/types"
 )
 
-func QueryTx(cliCtx *context.NodeVaultQuerierImpl, hashHexStr string) (types2.TxResponse, error) {
+func QueryTx(cliCtx *context.NodeVaultQuerierImpl, hashHexStr string) (types.TxResponse, error) {
 	// convert prefix txhash
 	hashStr, err := SplitTxHashPreFix(hashHexStr)
 	if err != nil {
-		return types2.TxResponse{}, err
+		return types.TxResponse{}, err
 	}
 
 	hash, err := hex.DecodeString(hashStr)
 	if err != nil {
-		return types2.TxResponse{}, err
+		return types.TxResponse{}, err
 	}
 
 	node, err := cliCtx.GetNode()
 	if err != nil {
-		return types2.TxResponse{}, err
+		return types.TxResponse{}, err
 	}
 	resTx, err := node.Tx(hash)
 	if err != nil {
-		return types2.TxResponse{}, err
+		return types.TxResponse{}, err
 	}
 	if len(resTx.Tx) == 0 {
-		return types2.TxResponse{}, err
+		return types.TxResponse{}, err
 	}
 	fmt.Println("resTx", resTx)
 
 	resBlocks, err := getBlocksForTxResults(cliCtx, []*appinterface.ResponseTx{&resTx})
 	if err != nil {
-		return types2.TxResponse{}, err
+		return types.TxResponse{}, err
 	}
 	fmt.Println("resBlocks", resBlocks)
 	out, err := formatTxResult(cliCtx.Codec, &resTx, resBlocks[resTx.Height])
@@ -52,21 +53,7 @@ func QueryTx(cliCtx *context.NodeVaultQuerierImpl, hashHexStr string) (types2.Tx
 	return out, nil
 }
 
-//// formatTxResults parses the indexed txs into a slice of TxResponse objects.
-//func formatTxResults(cdc *codec.Codec, resTxs []*appinterface.ResponseTx, resBlocks map[int64]*v1.Block) ([]types2.TxResponse, error) {
-//	var err error
-//	out := make([]types2.TxResponse, len(resTxs))
-//	for i := range resTxs {
-//		out[i], err = formatTxResult(cdc, resTxs[i], resBlocks[resTxs[i].Height])
-//		if err != nil {
-//			return nil, err
-//		}
-//	}
-//
-//	return out, nil
-//}
-
-func ReConvertTxResponseFromData(cdc *codec.Codec, txResponse types2.TxResponse) types2.TxResponse {
+func ReConvertTxResponseFromData(cdc *codec.Codec, txResponse types.TxResponse) types.TxResponse {
 	if len(txResponse.Data) == 0 {
 		return txResponse
 	}
@@ -108,16 +95,16 @@ func getBlocksForTxResults(cliCtx *context.NodeVaultQuerierImpl, resTxs []*appin
 	return resBlocks, nil
 }
 
-func formatTxResult(cdc *codec.Codec, resTx *appinterface.ResponseTx, resBlock *v1.Block) (types2.TxResponse, error) {
+func formatTxResult(cdc *codec.Codec, resTx *appinterface.ResponseTx, resBlock *v1.Block) (types.TxResponse, error) {
 	tx, err := parseTx(cdc, resTx.Tx)
 	if err != nil {
-		return types2.TxResponse{}, err
+		return types.TxResponse{}, err
 	}
 
-	return types2.NewResponseResultTx(resTx, tx, time.Unix(resBlock.Timestamp, 0).Format(time.RFC3339)), nil
+	return types.NewResponseResultTx(resTx, tx, time.Unix(resBlock.Timestamp, 0).Format(time.RFC3339)), nil
 }
 
-func parseTx(cdc *codec.Codec, txBytes []byte) (types2.Tx, error) {
+func parseTx(cdc *codec.Codec, txBytes []byte) (types.Tx, error) {
 	var tx StdTx
 
 	err := cdc.UnmarshalBinaryLengthPrefixed(txBytes, &tx)
@@ -134,21 +121,21 @@ func ChangeGMBlockAddress(res v1.Block) (v1.Block, error) {
 	if err := proposerGMAddress.UnmarshalText([]byte(res.Proposer)); err != nil {
 		return res, err
 	}
-	res.Proposer = types2.AccAddress(types2.GetAddressFrom48(proposerGMAddress[:])).String()
+	res.Proposer = types.AccAddress(types.GetAddressFrom48(proposerGMAddress[:])).String()
 
 	GMaddress := basics.Address{}
 	for i := 0; i < len(res.CertCommitteeInfo); i++ {
 		if err := GMaddress.UnmarshalText([]byte(res.CertCommitteeInfo[i].Address)); err != nil {
 			return res, err
 		}
-		addr := types2.AccAddress(types2.GetAddressFrom48(GMaddress[:])).String()
+		addr := types.AccAddress(types.GetAddressFrom48(GMaddress[:])).String()
 		res.CertCommitteeInfo[i].Address = addr
 	}
 	for j := 0; j < len(res.BlockCommitteeInfo); j++ {
 		if err := GMaddress.UnmarshalText([]byte(res.BlockCommitteeInfo[j].Address)); err != nil {
 			return res, err
 		}
-		addr := types2.AccAddress(types2.GetAddressFrom48(GMaddress[:])).String()
+		addr := types.AccAddress(types.GetAddressFrom48(GMaddress[:])).String()
 		res.BlockCommitteeInfo[j].Address = addr
 	}
 

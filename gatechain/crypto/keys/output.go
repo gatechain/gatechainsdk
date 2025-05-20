@@ -1,9 +1,6 @@
 package keys
 
 import (
-	"fmt"
-
-	"github.com/gatechain/crypto/secp256k1"
 	sdk "github.com/gatechain/gatechainsdk/gatechain/types"
 )
 
@@ -35,56 +32,6 @@ type multisigPubKeyOutput struct {
 	Weight  uint   `json:"weight" yaml:"weight"`
 }
 
-// Bech32KeysOutput returns a slice of KeyOutput objects, each with the "acc"
-// Bech32 prefixes, given a slice of Info objects. It returns an error if any
-// call to Bech32KeyOutput fails.
-func Bech32KeysOutput(infos []Info) ([]KeyOutput, error) {
-	var ko KeyOutput
-	var err error
-	kos := make([]KeyOutput, len(infos))
-	for i, info := range infos {
-		switch info.GetPubKey().(type) {
-		case secp256k1.PubKeySecp256k1:
-			ko, err = EthKeyOutput(info)
-			if err != nil {
-				return nil, err
-			}
-		default: // default goes to bench32
-			ko, err = Bech32KeyOutput(info)
-			if err != nil {
-				return nil, err
-			}
-		}
-		kos[i] = ko
-	}
-
-	return kos, nil
-}
-
-// Bech32ConsKeyOutput create a KeyOutput in with "cons" Bech32 prefixes.
-func Bech32ConsKeyOutput(keyInfo Info) (KeyOutput, error) {
-	consAddr := sdk.ConsAddress(keyInfo.GetPubKey().Address().Bytes())
-
-	bechPubKey, err := sdk.Bech32ifyConsPub(keyInfo.GetPubKey())
-	if err != nil {
-		return KeyOutput{}, err
-	}
-
-	return NewKeyOutput(keyInfo.GetName(), keyInfo.GetType().String(), consAddr.String(), bechPubKey), nil
-}
-
-// Bech32ValKeyOutput create a KeyOutput in with "val" Bech32 prefixes.
-func Bech32ValKeyOutput(keyInfo Info) (KeyOutput, error) {
-	valAddr := sdk.ValAddress(keyInfo.GetPubKey().Address().Bytes())
-
-	bechPubKey, err := sdk.Bech32ifyValPub(keyInfo.GetPubKey())
-	if err != nil {
-		return KeyOutput{}, err
-	}
-
-	return NewKeyOutput(keyInfo.GetName(), keyInfo.GetType().String(), valAddr.String(), bechPubKey), nil
-}
-
 // Bech32KeyOutput create a KeyOutput in with "acc" Bech32 prefixes. If the
 // public key is a multisig public key, then the threshold and constituent
 // public keys will be added.
@@ -96,63 +43,6 @@ func Bech32KeyOutput(keyInfo Info) (KeyOutput, error) {
 	}
 
 	ko := NewKeyOutput(keyInfo.GetName(), keyInfo.GetType().String(), accAddr.String(), bechPubKey)
-
-	if mInfo, ok := keyInfo.(*multiInfo); ok {
-		pubKeys := make([]multisigPubKeyOutput, len(mInfo.PubKeys))
-
-		for i, pk := range mInfo.PubKeys {
-			accAddr := sdk.AccAddress(pk.PubKey.Address().Bytes())
-
-			bechPubKey, err := sdk.Bech32ifyAccPub(pk.PubKey)
-			if err != nil {
-				return KeyOutput{}, err
-			}
-
-			pubKeys[i] = multisigPubKeyOutput{accAddr.String(), bechPubKey, pk.Weight}
-		}
-
-		ko.Threshold = mInfo.Threshold
-		ko.PubKeys = pubKeys
-	}
-
-	return ko, nil
-}
-
-// Bech32KeyOutput create a KeyOutput in with "acc" Bech32 prefixes. If the
-// public key is a multisig public key, then the threshold and constituent
-// public keys will be added.
-func EthKeyOutput(keyInfo Info) (KeyOutput, error) {
-	// Converts key to Ethermint secp256 implementation
-	secpPubKey, ok := keyInfo.GetPubKey().(secp256k1.PubKeySecp256k1)
-	if !ok {
-		panic(fmt.Errorf("invalid pub key type, must be Ethereum key: %T", keyInfo.GetPubKey()))
-	}
-
-	accAddr := sdk.AccAddress(secpPubKey.Address())
-	bechPubKey, err := sdk.Bech32ifyPubKey("ethpub", keyInfo.GetPubKey())
-	if err != nil {
-		return KeyOutput{}, err
-	}
-
-	ko := NewKeyOutput(keyInfo.GetName(), keyInfo.GetType().String(), accAddr.Hex(), bechPubKey)
-
-	if mInfo, ok := keyInfo.(*multiInfo); ok {
-		pubKeys := make([]multisigPubKeyOutput, len(mInfo.PubKeys))
-
-		for i, pk := range mInfo.PubKeys {
-			accAddr := sdk.AccAddress(pk.PubKey.Address())
-
-			bechPubKey, err := sdk.Bech32ifyPubKey("ethpub", pk.PubKey)
-			if err != nil {
-				return KeyOutput{}, err
-			}
-
-			pubKeys[i] = multisigPubKeyOutput{accAddr.Hex(), bechPubKey, pk.Weight}
-		}
-
-		ko.Threshold = mInfo.Threshold
-		ko.PubKeys = pubKeys
-	}
 
 	return ko, nil
 }

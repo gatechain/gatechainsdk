@@ -4,16 +4,16 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/gatechain/gatechainsdk/gatechain/auth/client/keys"
-	"github.com/gatechain/gatechainsdk/gatechain/codec"
-	"github.com/gatechain/gatechainsdk/gatechain/context"
-	types2 "github.com/gatechain/gatechainsdk/gatechain/types"
 	"io/ioutil"
 	"os"
+
+	"github.com/gatechain/gatechainsdk/gatechain/codec"
+	"github.com/gatechain/gatechainsdk/gatechain/context"
+	"github.com/gatechain/gatechainsdk/gatechain/types"
 )
 
 // txBldr types.StdTxBuilder,
-func CompleteAndBroadcastTxCLI(txBldr TxBuilder, cliCtx *context.NodeVaultQuerierImpl, msgs []types2.Msg, isBroadcast bool) ([]byte, error) {
+func CompleteAndBroadcastTxCLI(txBldr TxBuilder, cliCtx *context.NodeVaultQuerierImpl, msgs []types.Msg, isBroadcast bool) ([]byte, error) {
 
 	txBldr, err := PrepareTxBuilder(txBldr, cliCtx)
 	if err != nil {
@@ -21,7 +21,7 @@ func CompleteAndBroadcastTxCLI(txBldr TxBuilder, cliCtx *context.NodeVaultQuerie
 	}
 	fromName := cliCtx.GetFromName()
 
-	passphrase := "12345678"
+	passphrase := DefaultKeyPass
 
 	txBytes, err := txBldr.BuildAndSign(fromName, passphrase, msgs)
 	if err != nil {
@@ -38,7 +38,7 @@ func CompleteAndBroadcastTxCLI(txBldr TxBuilder, cliCtx *context.NodeVaultQuerie
 		return txBytes, err
 	}
 	fmt.Println(res)
-	resPos := types2.NewResponseFormatBroadcastTx(&res)
+	resPos := types.NewResponseFormatBroadcastTx(&res)
 	TxResponse := ReConvertTxResponseFromData(cliCtx.Codec, resPos)
 	// format prefix txhash
 	TxResponse = ConvertTxHashPrefixForTxResponse(TxResponse)
@@ -84,7 +84,7 @@ func UpdateValidHeight(cliCtx *context.NodeVaultQuerierImpl, txBldr TxBuilder) (
 }
 
 // PrintUnsignedStdTx builds an unsigned StdTx and prints it to os.Stdout.
-func PrintUnsignedStdTx(txBldr TxBuilder, cliCtx *context.NodeVaultQuerierImpl, msgs []types2.Msg, filename string) error {
+func PrintUnsignedStdTx(txBldr TxBuilder, cliCtx *context.NodeVaultQuerierImpl, msgs []types.Msg, filename string) error {
 	stdTx, err := buildUnsignedStdTxOffline(txBldr, cliCtx, msgs)
 	if err != nil {
 		return err
@@ -109,7 +109,7 @@ func PrintUnsignedStdTx(txBldr TxBuilder, cliCtx *context.NodeVaultQuerierImpl, 
 	fmt.Printf("Unsigned transaction JSON written to %s\n", filename)
 	return nil
 }
-func buildUnsignedStdTxOffline(txBldr TxBuilder, cliCtx *context.NodeVaultQuerierImpl, msgs []types2.Msg) (stdTx StdTx, err error) {
+func buildUnsignedStdTxOffline(txBldr TxBuilder, cliCtx *context.NodeVaultQuerierImpl, msgs []types.Msg) (stdTx StdTx, err error) {
 	if txBldr.SimulateAndExecute() {
 		if cliCtx.GenerateOnly {
 			return stdTx, errors.New("cannot estimate gas with generate-only")
@@ -133,7 +133,7 @@ func buildUnsignedStdTxOffline(txBldr TxBuilder, cliCtx *context.NodeVaultQuerie
 
 // EnrichWithGas calculates the gas estimate that would be consumed by the
 // transaction and set the transaction's respective value accordingly.
-func EnrichWithGas(txBldr TxBuilder, cliCtx *context.NodeVaultQuerierImpl, msgs []types2.Msg) (TxBuilder, error) {
+func EnrichWithGas(txBldr TxBuilder, cliCtx *context.NodeVaultQuerierImpl, msgs []types.Msg) (TxBuilder, error) {
 	_, adjusted, err := simulateMsgs(txBldr, cliCtx, msgs)
 	if err != nil {
 		return txBldr, err
@@ -144,7 +144,7 @@ func EnrichWithGas(txBldr TxBuilder, cliCtx *context.NodeVaultQuerierImpl, msgs 
 
 // nolint
 // SimulateMsgs simulates the transaction and returns the gas estimate and the adjusted value.
-func simulateMsgs(txBldr TxBuilder, cliCtx *context.NodeVaultQuerierImpl, msgs []types2.Msg) (estimated, adjusted uint64, err error) {
+func simulateMsgs(txBldr TxBuilder, cliCtx *context.NodeVaultQuerierImpl, msgs []types.Msg) (estimated, adjusted uint64, err error) {
 	txBytes, err := txBldr.BuildTxForSim(msgs)
 	if err != nil {
 		return
@@ -178,7 +178,7 @@ func CalculateGas(
 }
 
 func parseQueryResponse(cdc *codec.Codec, rawRes []byte) (uint64, error) {
-	var simulationResult types2.Result
+	var simulationResult types.Result
 	if err := cdc.UnmarshalBinaryLengthPrefixed(rawRes, &simulationResult); err != nil {
 		return 0, err
 	}
@@ -211,34 +211,7 @@ func ReadStdTxFromFile(cdc *codec.Codec, filename string) (stdTx StdTx, err erro
 	return
 }
 
-// SignStdTxWithSignerAddress attaches a signature to a StdTx and returns a copy of a it.
-// Don't perform online validation or lookups if offline is true, else
-// populate account and sequence numbers from a foreign account.
-func SignStdTxWithSignerAddress(txBldr TxBuilder, cliCtx *context.NodeVaultQuerierImpl,
-	addr types2.AccAddress, name string, stdTx StdTx,
-	offline bool) (signedStdTx StdTx, err error) {
-
-	// check whether the address is a signer
-	if !isTxSigner(addr, stdTx.GetSigners()) {
-		return signedStdTx, fmt.Errorf("%s: %s", errInvalidSigner, name)
-	}
-
-	if !offline {
-		txBldr, err = populateAccountFromState(txBldr, cliCtx, addr)
-		if err != nil {
-			return signedStdTx, err
-		}
-	}
-
-	passphrase, err := keys.GetPassphrase(name)
-	if err != nil {
-		return signedStdTx, err
-	}
-
-	return txBldr.SignStdTx(name, passphrase, stdTx, false)
-}
-
-func isTxSigner(user types2.AccAddress, signers []types2.AccAddress) bool {
+func isTxSigner(user types.AccAddress, signers []types.AccAddress) bool {
 	for _, s := range signers {
 		if bytes.Equal(user.Bytes(), s.Bytes()) {
 			return true
@@ -249,7 +222,7 @@ func isTxSigner(user types2.AccAddress, signers []types2.AccAddress) bool {
 }
 
 func populateAccountFromState(
-	txBldr TxBuilder, cliCtx *context.NodeVaultQuerierImpl, addr types2.AccAddress,
+	txBldr TxBuilder, cliCtx *context.NodeVaultQuerierImpl, addr types.AccAddress,
 ) (TxBuilder, error) {
 
 	num, err := NewAccountRetriever(cliCtx, cliCtx.Codec).GetAccountNumber(addr)
@@ -278,21 +251,15 @@ func SignStdTx(
 	addr := info.GetPubKey().Address()
 
 	// check whether the address is a signer
-	if !isTxSigner(types2.AccAddress(addr), stdTx.GetSigners()) {
+	if !isTxSigner(types.AccAddress(addr), stdTx.GetSigners()) {
 		return signedStdTx, fmt.Errorf("%s: %s", errInvalidSigner, name)
 	}
 
 	if !offline {
-		txBldr, err = populateAccountFromState(txBldr, cliCtx, types2.AccAddress(addr))
+		txBldr, err = populateAccountFromState(txBldr, cliCtx, types.AccAddress(addr))
 		if err != nil {
 			return signedStdTx, err
 		}
 	}
-
-	//passphrase, err := keys.GetPassphrase(name)
-	//if err != nil {
-	//	return signedStdTx, err
-	//}
-
 	return txBldr.SignStdTx(name, DefaultKeyPass, stdTx, appendSig)
 }
