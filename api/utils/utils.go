@@ -25,12 +25,13 @@ func MakeCodec() *codec.Codec {
 	return cdc
 }
 
-func JsonOutPut(o interface{}, cdc *codec.Codec) {
+func JsonOutPut(o interface{}, cdc *codec.Codec) error {
 	var jsonString []byte
 	jsonString, err := cdc.MarshalJSONIndent(o, "", "  ")
 	if err != nil {
 		fmt.Println(err)
-		return
+		return err
 	}
 	fmt.Println(string(jsonString))
+	return nil
 }

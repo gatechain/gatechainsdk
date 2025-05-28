@@ -15,7 +15,7 @@ func NewService(ctx *context.NodeVaultQuerierImpl) *Service {
 	return &Service{ctx: ctx}
 }
 
-func (s *Service) Block(blockHeight uint64) {
+func (s *Service) Block(blockHeight uint64) error {
 	height := int64(blockHeight)
 	if blockHeight == 0 {
 		height, _ = s.ctx.GetChainHeight()
@@ -24,9 +24,8 @@ func (s *Service) Block(blockHeight uint64) {
 	block, err := s.ctx.Client.Block(uint64(height))
 	if err != nil {
 		fmt.Println(err)
-		return
+		return err
 	}
 	cdc := utils.MakeCodec()
-
-	utils.JsonOutPut(block, cdc)
+	return utils.JsonOutPut(block, cdc)
 }

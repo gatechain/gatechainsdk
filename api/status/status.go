@@ -15,11 +15,11 @@ func NewService(ctx *context.NodeVaultQuerierImpl) *Service {
 	return &Service{ctx: ctx}
 }
 
-func (s *Service) Status() {
+func (s *Service) Status() error {
 	status, err := s.ctx.Client.Status()
 	if err != nil {
 		fmt.Println(err)
-		return
+		return err
 	}
-	utils.JsonOutPut(status, s.ctx.GetCodec())
+	return utils.JsonOutPut(status, s.ctx.GetCodec())
 }

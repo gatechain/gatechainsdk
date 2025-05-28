@@ -12,16 +12,16 @@ import (
 )
 
 // command to withdraw rewards
-func WithdrawRewards(ctx *context.NodeVaultQuerierImpl, txBldr auth.TxBuilder, delegatorAddress, validatorAddress string, bComission bool) {
+func WithdrawRewards(ctx *context.NodeVaultQuerierImpl, txBldr auth.TxBuilder, delegatorAddress, validatorAddress string, bComission bool) error {
 	delegatorAccAddress, _, err := sdk.AccAddressTypeFromBech32(delegatorAddress)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return err
 	}
 	validatorAccAddress, err := sdk.ValAddressFromBech32(validatorAddress)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return err
 	}
 	msgs := make([]sdk.Msg, 0)
 	if bComission {
@@ -32,60 +32,63 @@ func WithdrawRewards(ctx *context.NodeVaultQuerierImpl, txBldr auth.TxBuilder, d
 	txbytes, err := auth.CompleteAndBroadcastTxCLI(txBldr, ctx, msgs, true)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return err
 	}
 	fmt.Println(txbytes)
+	return nil
 }
 
 // command to withdraw all rewards
-func WithdrawAllRewards(ctx *context.NodeVaultQuerierImpl, txBldr auth.TxBuilder, delegatorAddr string) {
+func WithdrawAllRewards(ctx *context.NodeVaultQuerierImpl, txBldr auth.TxBuilder, delegatorAddr string) error {
 	delegatorAccAddr, _, err := sdk.AccAddressTypeFromBech32(delegatorAddr)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return err
 	}
 	msgs, err := common.WithdrawAllDelegatorRewards(*ctx, types.ModuleName, delegatorAccAddr)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return err
 	}
 	txbytes, err := auth.CompleteAndBroadcastTxCLI(txBldr, ctx, msgs, true)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return err
 	}
 	fmt.Println(txbytes)
+	return nil
 }
 
 // command to replace a delegator's withdrawal address
-func SetWithdrawAddr(ctx *context.NodeVaultQuerierImpl, txBldr auth.TxBuilder, delegatorAddress, withdrawAddress string) {
+func SetWithdrawAddr(ctx *context.NodeVaultQuerierImpl, txBldr auth.TxBuilder, delegatorAddress, withdrawAddress string) error {
 	delegatorAccAddr, _, err := sdk.AccAddressTypeFromBech32(delegatorAddress)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return err
 	}
 	withdrawAddr, err := sdk.AccAddressFromBech32(withdrawAddress)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return err
 	}
 	msg := types.NewMsgSetWithdrawAddress(delegatorAccAddr, withdrawAddr)
 	txbytes, err := auth.CompleteAndBroadcastTxCLI(txBldr, ctx, []sdk.Msg{msg}, true)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return err
 	}
 	fmt.Println(txbytes)
+	return nil
 }
 
-func RewardReinvestment(ctx *context.NodeVaultQuerierImpl, txBldr auth.TxBuilder, delegatorAddress, validatorAddress string) {
+func RewardReinvestment(ctx *context.NodeVaultQuerierImpl, txBldr auth.TxBuilder, delegatorAddress, validatorAddress string) error {
 
 	delAccAddr, _, err := sdk.AccAddressTypeFromBech32(delegatorAddress)
 
 	valAccAddr, err := sdk.ValAddressFromBech32(validatorAddress)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return err
 	}
 	msgs := make([]sdk.Msg, 0)
 	msgs = append(msgs, types.NewMsgRewardReinvestment(delAccAddr, valAccAddr))
@@ -93,6 +96,8 @@ func RewardReinvestment(ctx *context.NodeVaultQuerierImpl, txBldr auth.TxBuilder
 	txbytes, err := auth.CompleteAndBroadcastTxCLI(txBldr, ctx, msgs, true)
 	if err != nil {
 		fmt.Println(err)
+		return err
 	}
 	fmt.Println(txbytes)
+	return nil
 }

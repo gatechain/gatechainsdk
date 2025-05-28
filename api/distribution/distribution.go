@@ -16,69 +16,69 @@ func NewService(ctx *context.NodeVaultQuerierImpl) *Service {
 	return &Service{ctx: ctx}
 }
 
-func (s *Service) QueryParams() {
-	cli.QueryParams(s.ctx)
+func (s *Service) QueryParams() error {
+	return cli.QueryParams(s.ctx)
 }
 
 // QueryValidatorOutstandingRewards implements the query validator outstanding rewards command.
-func (s *Service) QueryValidatorOutstandingRewards(ValidatorAddress string) {
-	cli.QueryValidatorOutstandingRewards(s.ctx, ValidatorAddress)
+func (s *Service) QueryValidatorOutstandingRewards(ValidatorAddress string) error {
+	return cli.QueryValidatorOutstandingRewards(s.ctx, ValidatorAddress)
 }
 
 // QueryValidatorCommission implements the query validator commission command.
-func (s *Service) QueryValidatorCommission(validatorAddr string) {
-	cli.QueryValidatorCommission(s.ctx, validatorAddr)
+func (s *Service) QueryValidatorCommission(validatorAddr string) error {
+	return cli.QueryValidatorCommission(s.ctx, validatorAddr)
 }
 
 // QueryDelegatorRewards implements the query delegator rewards command.
-func (s *Service) QueryDelegatorRewards(args []string) {
-	cli.QueryDelegatorRewards(s.ctx, args)
+func (s *Service) QueryDelegatorRewards(args []string) error {
+	return cli.QueryDelegatorRewards(s.ctx, args)
 }
 
 // QueryCommunityPool returns the command for fetching community pool info
-func (s *Service) QueryCommunityPool() {
-	cli.QueryCommunityPool(s.ctx)
+func (s *Service) QueryCommunityPool() error {
+	return cli.QueryCommunityPool(s.ctx)
 }
 
 // command to withdraw rewards
-func (s *Service) WithdrawRewards(delegatorAddress, validatorAddress string, bComission bool, fees, chainID string, gas uint64) {
+func (s *Service) WithdrawRewards(delegatorAddress, validatorAddress string, bComission bool, fees, chainID string, gas uint64) error {
 	txBldr := auth.NewTxBuilderFromCLI(s.ctx.RootDir, fees, chainID, gas, s.ctx.Codec)
 	txBldr, err := auth.UpdateValidHeight(s.ctx, txBldr)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return err
 	}
-	cli.WithdrawRewards(s.ctx, txBldr, delegatorAddress, validatorAddress, bComission)
+	return cli.WithdrawRewards(s.ctx, txBldr, delegatorAddress, validatorAddress, bComission)
 }
 
 // command to withdraw all rewards
-func (s *Service) WithdrawAllRewards(delegatorAddr string, fees, chainID string, gas uint64) {
+func (s *Service) WithdrawAllRewards(delegatorAddr string, fees, chainID string, gas uint64) error {
 	txBldr := auth.NewTxBuilderFromCLI(s.ctx.RootDir, fees, chainID, gas, s.ctx.Codec)
 	txBldr, err := auth.UpdateValidHeight(s.ctx, txBldr)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return err
 	}
-	cli.WithdrawAllRewards(s.ctx, txBldr, delegatorAddr)
+	return cli.WithdrawAllRewards(s.ctx, txBldr, delegatorAddr)
 }
 
 // command to replace a delegator's withdrawal address
-func (s *Service) SetWithdrawAddr(delegatorAddress, withdrawAddress string, fees, chainID string, gas uint64) {
+func (s *Service) SetWithdrawAddr(delegatorAddress, withdrawAddress string, fees, chainID string, gas uint64) error {
 	txBldr := auth.NewTxBuilderFromCLI(s.ctx.RootDir, fees, chainID, gas, s.ctx.Codec)
 	txBldr, err := auth.UpdateValidHeight(s.ctx, txBldr)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return err
 	}
-	cli.SetWithdrawAddr(s.ctx, txBldr, delegatorAddress, withdrawAddress)
+	return cli.SetWithdrawAddr(s.ctx, txBldr, delegatorAddress, withdrawAddress)
 }
 
-func (s *Service) RewardReinvestment(delegatorAddress, validatorAddress string, fees, chainID string, gas uint64) {
+func (s *Service) RewardReinvestment(delegatorAddress, validatorAddress string, fees, chainID string, gas uint64) error {
 	txBldr := auth.NewTxBuilderFromCLI(s.ctx.RootDir, fees, chainID, gas, s.ctx.Codec)
 	txBldr, err := auth.UpdateValidHeight(s.ctx, txBldr)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return err
 	}
-	cli.RewardReinvestment(s.ctx, txBldr, delegatorAddress, validatorAddress)
+	return cli.RewardReinvestment(s.ctx, txBldr, delegatorAddress, validatorAddress)
 }

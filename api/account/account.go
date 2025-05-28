@@ -16,22 +16,22 @@ func NewService(ctx *context.NodeVaultQuerierImpl) *Service {
 	return &Service{ctx: ctx}
 }
 
-func (s *Service) CreateAccount(name string, rootDir string) {
-	auth.CreateAccount(name, rootDir)
+func (s *Service) CreateAccount(name string, rootDir string) error {
+	return auth.CreateAccount(name, rootDir)
 }
 
-func (s *Service) QueryAccount(addr string) {
+func (s *Service) QueryAccount(addr string) error {
 
 	key, _, err := types.AccAddressTypeFromBech32(addr)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return err
 	}
 	retriever := auth.NewVaultRetriever(s.ctx)
 
 	if err := retriever.EnsureExists(key); err != nil {
 		fmt.Println(err)
-		return
+		return err
 	}
 
 	account, height, err := retriever.GetAccountWithHeight(key)
@@ -39,29 +39,30 @@ func (s *Service) QueryAccount(addr string) {
 	err = account.MergeRevocableWei(uint64(s.ctx.Height))
 	if err != nil {
 		fmt.Println(err)
-		return
+		return err
 	}
-	s.ctx.PrintOutput(account)
+
+	return s.ctx.PrintOutput(account)
 }
 
-func (s *Service) GetAccountBlance(addr string) {
+func (s *Service) GetAccountBlance(addr string) error {
 
 	retriever := auth.NewVaultRetriever(s.ctx)
 	key, err := types.AccAddressFromBech32(addr)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return err
 	}
 	if err := retriever.EnsureExists(key); err != nil {
 		fmt.Println(err)
-		return
+		return err
 	}
 
 	vault, height, err := retriever.GetAccountWithHeight(key)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return err
 	}
 	s.ctx = s.ctx.WithHeight(height)
-	s.ctx.PrintOutput(vault.GetCoins())
+	return s.ctx.PrintOutput(vault.GetCoins())
 }

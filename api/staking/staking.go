@@ -17,106 +17,106 @@ func NewService(ctx *context.NodeVaultQuerierImpl) *Service {
 }
 
 // QueryValidatorUnbondingDelegations implements the query all unbonding delegatations from a validator command.
-func (s *Service) QueryValidatorUnbondingDelegations(ValidatorAddr string) {
-	cli.QueryValidatorUnbondingDelegations(s.ctx, ValidatorAddr)
+func (s *Service) QueryValidatorUnbondingDelegations(ValidatorAddr string) error {
+	return cli.QueryValidatorUnbondingDelegations(s.ctx, ValidatorAddr)
 }
 
 // QueryValidatorRedelegations implements the query all redelegatations
 // from a validator command.
-func (s *Service) QueryValidatorRedelegations(SrcValidatorAddr string) {
-	cli.QueryValidatorRedelegations(s.ctx, SrcValidatorAddr)
+func (s *Service) QueryValidatorRedelegations(SrcValidatorAddr string) error {
+	return cli.QueryValidatorRedelegations(s.ctx, SrcValidatorAddr)
 }
 
 // QueryDelegation the query delegation command.
-func (s *Service) QueryDelegation(delegatorAddr, validatorAddr string) {
-	cli.QueryDelegation(s.ctx, delegatorAddr, validatorAddr)
+func (s *Service) QueryDelegation(delegatorAddr, validatorAddr string) error {
+	return cli.QueryDelegation(s.ctx, delegatorAddr, validatorAddr)
 }
 
 // QueryDelegations implements the command to query all the delegations
 // made from one delegator.
-func (s *Service) QueryDelegations(delegatorAddr string) {
-	cli.QueryDelegations(s.ctx, delegatorAddr)
+func (s *Service) QueryDelegations(delegatorAddr string) error {
+	return cli.QueryDelegations(s.ctx, delegatorAddr)
 }
 
 // QueryValidatorDelegations implements the command to query all the
 // delegations to a specific validator.
 // , cdc *codec.Codec
-func (s *Service) QueryValidatorDelegations(delegatorAddr string) {
-	cli.QueryValidatorDelegations(s.ctx, delegatorAddr)
+func (s *Service) QueryValidatorDelegations(delegatorAddr string) error {
+	return cli.QueryValidatorDelegations(s.ctx, delegatorAddr)
 }
 
 // QueryUnbondingDelegation implements the command to query a single
 // unbonding-delegation record.
-func (s *Service) QueryUnbondingDelegation(delegatorAddr, validatorAddr string) {
-	cli.QueryUnbondingDelegation(s.ctx, delegatorAddr, validatorAddr)
+func (s *Service) QueryUnbondingDelegation(delegatorAddr, validatorAddr string) error {
+	return cli.QueryUnbondingDelegation(s.ctx, delegatorAddr, validatorAddr)
 }
 
 // QueryUnbondingDelegations implements the command to query all the
 // unbonding-delegation records for a delegator.
-func (s *Service) QueryUnbondingDelegations(delegatorAddr string) {
-	cli.QueryUnbondingDelegations(s.ctx, delegatorAddr)
+func (s *Service) QueryUnbondingDelegations(delegatorAddr string) error {
+	return cli.QueryUnbondingDelegations(s.ctx, delegatorAddr)
 }
 
-func (s *Service) QueryRedelegation(args []string) {
-	cli.QueryRedelegation(s.ctx, args)
+func (s *Service) QueryRedelegation(args []string) error {
+	return cli.QueryRedelegation(s.ctx, args)
 }
 
 // QueryRedelegations implements the command to query all the
 // redelegation records for a delegator.
-func (s *Service) QueryRedelegations(delegatorAddr string) {
-	cli.QueryRedelegations(s.ctx, delegatorAddr)
+func (s *Service) QueryRedelegations(delegatorAddr string) error {
+	return cli.QueryRedelegations(s.ctx, delegatorAddr)
 }
 
 // QueryPool implements the pool query command.
-func (s *Service) QueryPool() {
-	cli.QueryPool(s.ctx)
+func (s *Service) QueryPool() error {
+	return cli.QueryPool(s.ctx)
 }
 
 // QueryParams implements the params query command.
-func (s *Service) QueryParams() {
-	cli.QueryParams(s.ctx)
+func (s *Service) QueryParams() error {
+	return cli.QueryParams(s.ctx)
 }
 
 // GetDelegate implements the delegate command.
-func (s *Service) GetDelegate(amountStr, delegatorAddress, validatorAddr, fees, chainID string, gas uint64) {
+func (s *Service) GetDelegate(amountStr, delegatorAddress, validatorAddr, fees, chainID string, gas uint64) error {
 	txBldr := auth.NewTxBuilderFromCLI(s.ctx.RootDir, fees, chainID, gas, s.ctx.Codec)
 	txBldr, err := auth.UpdateValidHeight(s.ctx, txBldr)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return err
 	}
-	cli.GetDelegate(s.ctx, txBldr, amountStr, delegatorAddress, validatorAddr)
+	return cli.GetDelegate(s.ctx, txBldr, amountStr, delegatorAddress, validatorAddr)
 }
 
 // GetRedelegate the begin redelegation command.
-func (s *Service) GetRedelegate(delAddr, fees, chainID string, gas uint64, args []string) {
+func (s *Service) GetRedelegate(delAddr, fees, chainID string, gas uint64, args []string) error {
 	txBldr := auth.NewTxBuilderFromCLI(s.ctx.RootDir, fees, chainID, gas, s.ctx.Codec)
 	txBldr, err := auth.UpdateValidHeight(s.ctx, txBldr)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return err
 	}
-	cli.GetRedelegate(s.ctx, txBldr, delAddr, args)
+	return cli.GetRedelegate(s.ctx, txBldr, delAddr, args)
 }
 
 // GetUnbond implements the unbond validator command.
-func (s *Service) GetUnbond(amountStr, delegatorAddress, validatorAddr, fees, chainID string, gas uint64) {
+func (s *Service) GetUnbond(amountStr, delegatorAddress, validatorAddr, fees, chainID string, gas uint64) error {
 	txBldr := auth.NewTxBuilderFromCLI(s.ctx.RootDir, fees, chainID, gas, s.ctx.Codec)
 	txBldr, err := auth.UpdateValidHeight(s.ctx, txBldr)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return err
 	}
-	cli.GetUnbond(s.ctx, txBldr, amountStr, delegatorAddress, validatorAddr)
+	return cli.GetUnbond(s.ctx, txBldr, amountStr, delegatorAddress, validatorAddr)
 }
 
 // GetUnbond implements the unbond validator command by SecurityAddress
-func (s *Service) GetUnbondBySecAddr(fees, chainID string, gas uint64, args []string) {
+func (s *Service) GetUnbondBySecAddr(fees, chainID string, gas uint64, args []string) error {
 	txBldr := auth.NewTxBuilderFromCLI(s.ctx.RootDir, fees, chainID, gas, s.ctx.Codec)
 	txBldr, err := auth.UpdateValidHeight(s.ctx, txBldr)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return err
 	}
-	cli.GetUnbondBySecAddr(s.ctx, txBldr, args)
+	return cli.GetUnbondBySecAddr(s.ctx, txBldr, args)
 }
