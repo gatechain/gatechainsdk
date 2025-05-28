@@ -2,6 +2,7 @@ package block
 
 import (
 	"fmt"
+	v1 "github.com/gatechain/gatechainsdk/gatechain/rpc/spec/v1"
 
 	"github.com/gatechain/gatechainsdk/api/utils"
 	"github.com/gatechain/gatechainsdk/gatechain/context"
@@ -15,7 +16,7 @@ func NewService(ctx *context.NodeVaultQuerierImpl) *Service {
 	return &Service{ctx: ctx}
 }
 
-func (s *Service) Block(blockHeight uint64) error {
+func (s *Service) Block(blockHeight uint64) (response v1.Block, err error) {
 	height := int64(blockHeight)
 	if blockHeight == 0 {
 		height, _ = s.ctx.GetChainHeight()
@@ -24,8 +25,9 @@ func (s *Service) Block(blockHeight uint64) error {
 	block, err := s.ctx.Client.Block(uint64(height))
 	if err != nil {
 		fmt.Println(err)
-		return err
+		return v1.Block{}, err
 	}
 	cdc := utils.MakeCodec()
-	return utils.JsonOutPut(block, cdc)
+	utils.JsonOutPut(block, cdc)
+	return block, nil
 }

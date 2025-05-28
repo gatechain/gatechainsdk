@@ -20,8 +20,6 @@ var (
 
 var _ params.ParamSet = (*Params)(nil)
 
-//var DefaultAddMaxPowRate = types.NewDec(1).Quo(types.NewDec(100))
-
 // Params defines the high level settings for staking
 type Params struct {
 	UnbondingTime time.Duration `json:"undelegating_time" yaml:"undelegating_time"` // time duration of unbonding

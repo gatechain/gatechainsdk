@@ -101,17 +101,17 @@ func (s *Service) SendTX(from_addr, to_addr, amount, fees, chainID string, gas u
 }
 
 // query transaction hashHexStr
-func (s *Service) QueryTX(hashHexStr string) error {
+func (s *Service) QueryTX(hashHexStr string) (types.TxResponse, error) {
 	res, err := auth.QueryTx(s.ctx, hashHexStr)
 	if err != nil {
 		fmt.Println(err)
-		return err
+		return types.TxResponse{}, err
 	}
 	if res.Empty() {
 		err := fmt.Errorf("No transaction found with hash %s", hashHexStr)
 		fmt.Println(err)
-		return err
+		return types.TxResponse{}, err
 	}
 	fmt.Println(res)
-	return nil
+	return res, nil
 }

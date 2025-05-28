@@ -2,7 +2,6 @@ package types
 
 // query endpoints supported by the auth Querier
 const (
-	//QueryRevocable = "revocable"
 	QueryTx = "tx"
 )
 

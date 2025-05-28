@@ -113,7 +113,6 @@ func NewMsgDelegate(delAddr types.AccAddress, valAddr types.ValAddress, amount t
 }
 
 // nolint
-// func (msg MsgDelegate) Route() string { return RouterKey }
 func (msg MsgDelegate) Type() string { return "delegation" }
 func (msg MsgDelegate) GetSigners() []types.AccAddress {
 	return []types.AccAddress{msg.DelegatorAddress}
@@ -173,7 +172,6 @@ func NewMsgBeginRedelegate(delAddr types.AccAddress, valSrcAddr,
 }
 
 // nolint
-// func (msg MsgBeginRedelegate) Route() string { return RouterKey }
 func (msg MsgBeginRedelegate) Type() string { return "redelegation" }
 func (msg MsgBeginRedelegate) GetSigners() []types.AccAddress {
 	return []types.AccAddress{msg.DelegatorAddress}
@@ -201,7 +199,6 @@ func NewMsgUndelegate(delAddr types.AccAddress, valAddr types.ValAddress, amount
 }
 
 // nolint
-// func (msg MsgUndelegate) Route() string { return RouterKey }
 func (msg MsgUndelegate) Type() string { return "undelegation" }
 func (msg MsgUndelegate) GetSigners() []types.AccAddress {
 	return []types.AccAddress{msg.DelegatorAddress}

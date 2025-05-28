@@ -31,40 +31,6 @@ type Validator struct {
 	Commission              Commission       `json:"commission" yaml:"commission"`                   // commission parameters
 }
 
-//// custom marshal yaml function due to consensus pubkey
-//func (v Validator) MarshalYAML() (interface{}, error) {
-//	bs, err := yaml.Marshal(struct {
-//		OperatorAddress         types.ValAddress
-//		ConsPubKey              string
-//		Jailed                  bool
-//		Status                  types.BondStatus
-//		Tokens                  types.Int
-//		DelegatorShares         types.Dec
-//		PowerRate               types.Dec
-//		Description             Description
-//		UnbondingHeight         int64
-//		UnbondingCompletionTime time.Time
-//		Commission              Commission
-//	}{
-//		OperatorAddress:         v.OperatorAddress,
-//		ConsPubKey:              types.MustBech32ifyConsPub(v.ConsPubKey),
-//		Jailed:                  v.Jailed,
-//		Status:                  v.Status,
-//		Tokens:                  v.Tokens,
-//		DelegatorShares:         v.DelegatorShares,
-//		PowerRate:               v.PowerRate,
-//		Description:             v.Description,
-//		UnbondingHeight:         v.UnbondingHeight,
-//		UnbondingCompletionTime: v.UnbondingCompletionTime,
-//		Commission:              v.Commission,
-//	})
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	return string(bs), nil
-//}
-
 // Validators is a collection of Validator
 type Validators []Validator
 

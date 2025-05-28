@@ -16,7 +16,7 @@ const (
 	MnemonicEntropySize = 256
 )
 
-func CreateAccount(name, rootDir string) error {
+func CreateAccount(name, rootDir string) (keys.Info, error) {
 	var kb keys.Keybase
 	var err error
 	var encryptPassword = DefaultKeyPass
@@ -31,7 +31,7 @@ func CreateAccount(name, rootDir string) error {
 	if len(flagPwd) >= MinKeyPassLen {
 		encryptPassword = flagPwd
 	} else if len(flagPwd) > 0 {
-		return fmt.Errorf("password must be at least %d characters", MinKeyPassLen)
+		return nil, fmt.Errorf("password must be at least %d characters", MinKeyPassLen)
 	}
 	dryRun := false
 	if dryRun {
@@ -41,16 +41,15 @@ func CreateAccount(name, rootDir string) error {
 	} else {
 		kb, err = crypto.NewKeyBaseFromDir(rootDir)
 		if err != nil {
-			//t.Log(err)
-			return err
+			return nil, err
 		}
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		_, err = kb.Get(name)
 		if err == nil {
-			return err
+			return nil, err
 		}
 	}
 
@@ -67,21 +66,21 @@ func CreateAccount(name, rootDir string) error {
 		// read entropy seed straight from crypto.Rand and convert to mnemonic
 		entropySeed, err := bip39.NewEntropy(MnemonicEntropySize)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		mnemonic, err = bip39.NewMnemonic(entropySeed[:])
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
 	info, err := kb.CreateAccount(name, mnemonic, bip39Passphrase, encryptPassword, account, index)
 	if err != nil {
-		return err
+		return nil, err
 	}
-
-	return printAccountInfo(info, showMnemonic, mnemonic)
+	printAccountInfo(info, showMnemonic, mnemonic)
+	return info, nil
 }
 
 func printAccountInfo(info keys.Info, showMnemonic bool, mnemonic string) error {

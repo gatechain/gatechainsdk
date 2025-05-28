@@ -2,6 +2,7 @@ package auth
 
 import (
 	"errors"
+	"fmt"
 	_ "fmt"
 	"github.com/gatechain/crypto"
 	_ "time"
@@ -24,6 +25,98 @@ type VaultAccount struct {
 	VaultAddress     []types.AccTypeAddress  `json:"vault_address" yaml:"vault_address"`
 	SecurityAddress  types.AccTypeAddress    `json:"security_address" yaml:"security_address"`
 	RevocableTokens  []*exported.RevocableTx `json:"sent_revocable_tokens" yaml:"sent_revocable_tokens"`
+}
+
+// String implements fmt.Stringer
+func (vault VaultAccount) String() string {
+
+	address := vault.Address.TypeString(vault.GetAccountType())
+	var pubkey string
+
+	if vault.PubKey != nil {
+		pubkey = types.MustBech32ifyAccPub(vault.PubKey)
+	}
+	if vault.GetAccountType() == types.StandardAccount {
+
+		return fmt.Sprintf(`Account:
+  Address:            %s
+  Pubkey:        %s
+  Tokens:        %s
+  AccountNumber: %d
+  Sequence:      %d
+  AccountType:        %d
+  VaultAddress:   %s
+  ReceivedRevocableTokens:         %s`,
+
+			address, pubkey, vault.Coins, vault.AccountNumber, vault.Sequence,
+			vault.GetAccountType(), vault.VaultAddress, vault.GetRevocabledTokensTotal(),
+		)
+	} else if vault.GetAccountType() == types.VaultAccount_type {
+		return fmt.Sprintf(`Account:
+  Address:            %s
+  Pubkey:        %s
+  Tokens:        %s
+  AccountNumber: %d
+  Sequence:      %d
+  AccountType:        %d
+  DelayHeight:        %d
+  SecurityAddress:    %s
+  LastClearingHeight: %d
+  LastClearingEffectHeight:   %d
+  NextClearingHeight:      %d
+  NextClearingEffectHeight:   %d
+  ReceivedRevocableTokens:         %s
+  SentRevocableTokens:      %s`,
+
+			address, pubkey, vault.Coins, vault.AccountNumber, vault.Sequence, vault.GetAccountType(), vault.DelayHeight,
+			vault.SecurityAddress, vault.Clear.LastClearingHeight, vault.Clear.LastClearingEffectHeight,
+			vault.Clear.NextClearingHeight, vault.Clear.NextClearingEffectHeight, vault.GetRevocabledTokensTotal(), vault.getRevocableTokens(),
+		)
+	} else if vault.GetAccountType() == types.MultiSignerStandardAccount {
+
+		return fmt.Sprintf(`Account:
+  Address:            %s
+  Pubkey:        %s
+  Tokens:        %s
+  AccountNumber: %d
+  Sequence:      %d
+  AccountType:        %d
+  VaultAddress:   %s
+  ReceivedRevocableTokens:         %s`,
+			//  Signers:            %s
+			//  MinSignatureCount:  %d,
+
+			address, pubkey, vault.Coins, vault.AccountNumber, vault.Sequence, vault.GetAccountType(),
+			vault.VaultAddress, vault.GetRevocabledTokensTotal(),
+			// acc.Signers.Signers, acc.Signers.MinSigCount,
+		)
+	} else if vault.GetAccountType() == types.MultiSignerVaultAccount {
+		return fmt.Sprintf(`Account:
+  Address:            %s
+  Pubkey:        %s
+  Tokens:        %s
+  AccountNumber: %d
+  Sequence:      %d
+  AccountType:        %d
+  DelayHeight:        %d
+  SecurityAddress:    %s
+  LastClearingHeight:      %d
+  LastClearingEffectHeight:   %d
+  NextClearingHeight:      %d
+  NextClearingEffectHeight:   %d
+  ReceivedRevocableTokens:         %s
+  SentRevocableTokens:      %s`,
+			//  Signers:            %s
+			//  MinSignatureCount:  %d
+
+			address, pubkey, vault.Coins, vault.AccountNumber, vault.Sequence, vault.GetAccountType(), vault.DelayHeight,
+			vault.SecurityAddress, vault.Clear.LastClearingHeight, vault.Clear.LastClearingEffectHeight,
+			vault.Clear.NextClearingHeight, vault.Clear.NextClearingEffectHeight, vault.GetRevocabledTokensTotal(), vault.getRevocableTokens(),
+			//			acc.Signers.Signers, acc.Signers.MinSigCount,
+		)
+	} else {
+		return "Error account"
+	}
 }
 
 // GetSecurityAddress - Implements sdk.Account.
@@ -95,6 +188,43 @@ func (vault *VaultAccount) MergeRevocableWei(height uint64) error {
 		return errors.New("merge revocable coins failed,unknown account type")
 	}
 	return nil
+}
+
+// GetRevocabledTokensTotal - Implements sdk.Account.
+// return delay coins for standard account
+func (vault *VaultAccount) GetRevocabledTokensTotal() types.Coins {
+	coins := types.Coins{}
+	for _, delay := range vault.RevocabledTokens {
+		for _, delayCoin := range delay.Txs {
+			coins = coins.Add(delayCoin.Coins)
+		}
+	}
+	return coins
+}
+
+// GetRevocabledTokens - Implements sdk.Account.
+// return delay coins for standard account
+func (vault *VaultAccount) GetRevocabledTokens() []*exported.RevocableTx {
+	return vault.RevocabledTokens
+}
+
+// GetRevocableTokens - Implements sdk.Account.
+// return revocable coins for standard account
+func (vault *VaultAccount) getRevocableTokens() types.Coins {
+	switch vault.GetAccountType() {
+	case types.StandardAccount, types.MultiSignerStandardAccount:
+		return types.Coins{}
+	case types.VaultAccount_type, types.MultiSignerVaultAccount:
+		coins := types.Coins{}
+		for _, revocable := range vault.RevocableTokens {
+			for _, revocableCoin := range revocable.Txs {
+				coins = coins.Add(revocableCoin.Coins)
+			}
+		}
+		return coins
+	default:
+		return types.Coins{}
+	}
 }
 
 // GetRevocableTokensDetail - Implements sdk.Account.

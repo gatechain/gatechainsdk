@@ -75,11 +75,6 @@ func (i Int) BigInt() *big.Int {
 	return new(big.Int).Set(i.i)
 }
 
-// NewInt constructs Int from int64
-//func NewInt(n int64) Int {
-//	return Int{big.NewInt(n)}
-//}
-
 // NewIntFromBigInt constructs Int from big.Int
 func NewIntFromBigInt(i *big.Int) Int {
 	if i.BitLen() > maxBitLen {
@@ -149,7 +144,23 @@ func (i Int) String() string {
 	return i.i.String()
 }
 
-// // MarshalAmino defines custom encoding scheme
+// MarshalJSON defines custom encoding scheme
+func (i Int) MarshalJSON() ([]byte, error) {
+	if i.i == nil { // Necessary since default Uint initialization has i.i as nil
+		i.i = new(big.Int)
+	}
+	return marshalJSON(i.i)
+}
+
+// UnmarshalJSON defines custom decoding scheme
+func (i *Int) UnmarshalJSON(bz []byte) error {
+	if i.i == nil { // Necessary since default Int initialization has i.i as nil
+		i.i = new(big.Int)
+	}
+	return unmarshalJSON(i.i, bz)
+}
+
+// MarshalAmino defines custom encoding scheme
 func (i Int) MarshalAmino() (string, error) {
 	if i.i == nil { // Necessary since default Uint initialization has i.i as nil
 		i.i = new(big.Int)

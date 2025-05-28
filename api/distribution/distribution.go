@@ -2,6 +2,9 @@ package distribution
 
 import (
 	"fmt"
+	"github.com/gatechain/gatechainsdk/gatechain/distribution/client/common"
+	"github.com/gatechain/gatechainsdk/gatechain/distribution/types"
+	sdk "github.com/gatechain/gatechainsdk/gatechain/types"
 
 	"github.com/gatechain/gatechainsdk/gatechain/auth"
 	"github.com/gatechain/gatechainsdk/gatechain/context"
@@ -16,17 +19,17 @@ func NewService(ctx *context.NodeVaultQuerierImpl) *Service {
 	return &Service{ctx: ctx}
 }
 
-func (s *Service) QueryParams() error {
+func (s *Service) QueryParams() (common.PrettyParams, error) {
 	return cli.QueryParams(s.ctx)
 }
 
 // QueryValidatorOutstandingRewards implements the query validator outstanding rewards command.
-func (s *Service) QueryValidatorOutstandingRewards(ValidatorAddress string) error {
+func (s *Service) QueryValidatorOutstandingRewards(ValidatorAddress string) (types.ValidatorOutstandingRewards, error) {
 	return cli.QueryValidatorOutstandingRewards(s.ctx, ValidatorAddress)
 }
 
 // QueryValidatorCommission implements the query validator commission command.
-func (s *Service) QueryValidatorCommission(validatorAddr string) error {
+func (s *Service) QueryValidatorCommission(validatorAddr string) (types.ValidatorAccumulatedCommission, error) {
 	return cli.QueryValidatorCommission(s.ctx, validatorAddr)
 }
 
@@ -36,7 +39,7 @@ func (s *Service) QueryDelegatorRewards(args []string) error {
 }
 
 // QueryCommunityPool returns the command for fetching community pool info
-func (s *Service) QueryCommunityPool() error {
+func (s *Service) QueryCommunityPool() (sdk.DecCoins, error) {
 	return cli.QueryCommunityPool(s.ctx)
 }
 

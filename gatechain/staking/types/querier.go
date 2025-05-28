@@ -10,7 +10,6 @@ const (
 	QueryDelegatorUnbondingDelegations = "delegatorUnbondingDelegations"
 	QueryRedelegations                 = "redelegations"
 	QueryValidatorDelegations          = "validatorDelegations"
-	//QueryValidatorRedelegations        = "validatorRedelegations"
 	QueryValidatorUnbondingDelegations = "validatorUnbondingDelegations"
 	QueryDelegation                    = "delegation"
 	QueryUnbondingDelegation           = "unbondingDelegation"

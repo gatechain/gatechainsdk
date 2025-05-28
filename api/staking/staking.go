@@ -2,6 +2,7 @@ package staking
 
 import (
 	"fmt"
+	"github.com/gatechain/gatechainsdk/gatechain/staking/types"
 
 	"github.com/gatechain/gatechainsdk/gatechain/auth"
 	"github.com/gatechain/gatechainsdk/gatechain/context"
@@ -17,63 +18,63 @@ func NewService(ctx *context.NodeVaultQuerierImpl) *Service {
 }
 
 // QueryValidatorUnbondingDelegations implements the query all unbonding delegatations from a validator command.
-func (s *Service) QueryValidatorUnbondingDelegations(ValidatorAddr string) error {
+func (s *Service) QueryValidatorUnbondingDelegations(ValidatorAddr string) (types.UnbondingDelegations, error) {
 	return cli.QueryValidatorUnbondingDelegations(s.ctx, ValidatorAddr)
 }
 
 // QueryValidatorRedelegations implements the query all redelegatations
 // from a validator command.
-func (s *Service) QueryValidatorRedelegations(SrcValidatorAddr string) error {
+func (s *Service) QueryValidatorRedelegations(SrcValidatorAddr string) (types.RedelegationResponses, error) {
 	return cli.QueryValidatorRedelegations(s.ctx, SrcValidatorAddr)
 }
 
 // QueryDelegation the query delegation command.
-func (s *Service) QueryDelegation(delegatorAddr, validatorAddr string) error {
+func (s *Service) QueryDelegation(delegatorAddr, validatorAddr string) (types.DelegationResponse, error) {
 	return cli.QueryDelegation(s.ctx, delegatorAddr, validatorAddr)
 }
 
 // QueryDelegations implements the command to query all the delegations
 // made from one delegator.
-func (s *Service) QueryDelegations(delegatorAddr string) error {
+func (s *Service) QueryDelegations(delegatorAddr string) (types.DelegationResponses, error) {
 	return cli.QueryDelegations(s.ctx, delegatorAddr)
 }
 
 // QueryValidatorDelegations implements the command to query all the
 // delegations to a specific validator.
 // , cdc *codec.Codec
-func (s *Service) QueryValidatorDelegations(delegatorAddr string) error {
+func (s *Service) QueryValidatorDelegations(delegatorAddr string) (types.DelegationResponses, error) {
 	return cli.QueryValidatorDelegations(s.ctx, delegatorAddr)
 }
 
 // QueryUnbondingDelegation implements the command to query a single
 // unbonding-delegation record.
-func (s *Service) QueryUnbondingDelegation(delegatorAddr, validatorAddr string) error {
+func (s *Service) QueryUnbondingDelegation(delegatorAddr, validatorAddr string) (types.UnbondingDelegation, error) {
 	return cli.QueryUnbondingDelegation(s.ctx, delegatorAddr, validatorAddr)
 }
 
 // QueryUnbondingDelegations implements the command to query all the
 // unbonding-delegation records for a delegator.
-func (s *Service) QueryUnbondingDelegations(delegatorAddr string) error {
+func (s *Service) QueryUnbondingDelegations(delegatorAddr string) (types.UnbondingDelegations, error) {
 	return cli.QueryUnbondingDelegations(s.ctx, delegatorAddr)
 }
 
-func (s *Service) QueryRedelegation(args []string) error {
+func (s *Service) QueryRedelegation(args []string) (types.RedelegationResponses, error) {
 	return cli.QueryRedelegation(s.ctx, args)
 }
 
 // QueryRedelegations implements the command to query all the
 // redelegation records for a delegator.
-func (s *Service) QueryRedelegations(delegatorAddr string) error {
+func (s *Service) QueryRedelegations(delegatorAddr string) (types.RedelegationResponses, error) {
 	return cli.QueryRedelegations(s.ctx, delegatorAddr)
 }
 
 // QueryPool implements the pool query command.
-func (s *Service) QueryPool() error {
+func (s *Service) QueryPool() (types.Pool, error) {
 	return cli.QueryPool(s.ctx)
 }
 
 // QueryParams implements the params query command.
-func (s *Service) QueryParams() error {
+func (s *Service) QueryParams() (types.Params, error) {
 	return cli.QueryParams(s.ctx)
 }
 

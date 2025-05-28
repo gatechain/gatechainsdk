@@ -8,28 +8,29 @@ import (
 	sdk "github.com/gatechain/gatechainsdk/gatechain/types"
 )
 
-func QueryParams(ctx *context.NodeVaultQuerierImpl) error {
+func QueryParams(ctx *context.NodeVaultQuerierImpl) (common.PrettyParams, error) {
 	params, err := common.QueryParams(*ctx, types.ModuleName)
 	if err != nil {
 		fmt.Println(err)
-		return err
+		return common.PrettyParams{}, err
 	}
-	return ctx.PrintOutput(params)
+	ctx.PrintOutput(params)
+	return params, nil
 }
 
-func QueryValidatorOutstandingRewards(ctx *context.NodeVaultQuerierImpl, ValidatorAddress string) error {
-
+func QueryValidatorOutstandingRewards(ctx *context.NodeVaultQuerierImpl, ValidatorAddress string) (
+	types.ValidatorOutstandingRewards, error) {
 	validatorValAddress, err := sdk.ValAddressFromBech32(ValidatorAddress)
 	if err != nil {
 		fmt.Println(err)
-		return err
+		return types.ValidatorOutstandingRewards{}, err
 	}
 
 	params := types.NewQueryValidatorOutstandingRewardsParams(validatorValAddress)
 	bz, err := ctx.GetCodec().MarshalJSON(params)
 	if err != nil {
 		fmt.Println(err)
-		return err
+		return types.ValidatorOutstandingRewards{}, err
 	}
 
 	resp, _, err := ctx.QueryWithData(
@@ -38,33 +39,34 @@ func QueryValidatorOutstandingRewards(ctx *context.NodeVaultQuerierImpl, Validat
 	)
 	if err != nil {
 		fmt.Println(err)
-		return err
+		return types.ValidatorOutstandingRewards{}, err
 	}
 
 	var outstandingRewards types.ValidatorOutstandingRewards
 	if err := ctx.GetCodec().UnmarshalJSON(resp, &outstandingRewards); err != nil {
 		fmt.Println(err)
-		return err
+		return types.ValidatorOutstandingRewards{}, err
 	}
-	return ctx.PrintOutput(outstandingRewards)
+	ctx.PrintOutput(outstandingRewards)
+	return outstandingRewards, nil
 }
 
-func QueryValidatorCommission(ctx *context.NodeVaultQuerierImpl, validatorAddr string) error {
+func QueryValidatorCommission(ctx *context.NodeVaultQuerierImpl, validatorAddr string) (types.ValidatorAccumulatedCommission, error) {
 	validatorValAddr, err := sdk.ValAddressFromBech32(validatorAddr)
 	if err != nil {
 		fmt.Println(err)
-		return err
+		return types.ValidatorAccumulatedCommission{}, err
 	}
 
 	res, err := common.QueryValidatorCommission(*ctx, types.ModuleName, validatorValAddr)
 	if err != nil {
 		fmt.Println(err)
-		return err
+		return types.ValidatorAccumulatedCommission{}, err
 	}
 
 	var valCom types.ValidatorAccumulatedCommission
 	ctx.GetCodec().MustUnmarshalJSON(res, &valCom)
-	return ctx.PrintOutput(valCom)
+	return valCom, ctx.PrintOutput(valCom)
 }
 
 // QueryDelegatorRewards implements the query delegator rewards command.
@@ -96,14 +98,14 @@ func QueryDelegatorRewards(ctx *context.NodeVaultQuerierImpl, args []string) err
 }
 
 // QueryCommunityPool returns the command for fetching community pool info
-func QueryCommunityPool(ctx *context.NodeVaultQuerierImpl) error {
+func QueryCommunityPool(ctx *context.NodeVaultQuerierImpl) (sdk.DecCoins, error) {
 	res, _, err := ctx.QueryWithData(fmt.Sprintf("custom/%s/community_pool", types.ModuleName), nil)
 	if err != nil {
 		fmt.Println(err)
-		return err
+		return sdk.DecCoins{}, err
 	}
 
 	var result sdk.DecCoins
 	ctx.GetCodec().MustUnmarshalJSON(res, &result)
-	return ctx.PrintOutput(result)
+	return result, ctx.PrintOutput(result)
 }

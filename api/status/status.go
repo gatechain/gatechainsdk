@@ -2,6 +2,7 @@ package status
 
 import (
 	"fmt"
+	v1 "github.com/gatechain/gatechainsdk/gatechain/rpc/spec/v1"
 
 	"github.com/gatechain/gatechainsdk/api/utils"
 	"github.com/gatechain/gatechainsdk/gatechain/context"
@@ -15,11 +16,12 @@ func NewService(ctx *context.NodeVaultQuerierImpl) *Service {
 	return &Service{ctx: ctx}
 }
 
-func (s *Service) Status() error {
+func (s *Service) Status() (response v1.NodeStatus, err error) {
 	status, err := s.ctx.Client.Status()
 	if err != nil {
 		fmt.Println(err)
-		return err
+		return v1.NodeStatus{}, err
 	}
-	return utils.JsonOutPut(status, s.ctx.GetCodec())
+	utils.JsonOutPut(status, s.ctx.GetCodec())
+	return status, nil
 }

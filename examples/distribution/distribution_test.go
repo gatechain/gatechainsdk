@@ -24,15 +24,6 @@ func TestGetCmdQueryValidatorCommission(t *testing.T) {
 	client.Distribution.QueryValidatorCommission(validatorAddr)
 }
 
-//func TestGetCmdQueryValidatorSlashes(t *testing.T) {
-//	startHeightStr := "0"
-//	endHeightStr := "4139617"
-//	validatorAddress := "gt11380m6lv6xr9fphasqunurpfus50h6eu4vgy8cvhrzayut9xkhju2zvfmergng55pee48u9"
-//
-//	client := client.NewClient(common.EndPoint, common.APIToken)
-//	client.Distribution.QueryValidatorSlashes(validatorAddress, startHeightStr, endHeightStr)
-//}
-
 // query for rewards from a particular delegation
 func TestGetCmdQueryDelegatorRewards(t *testing.T) {
 	args := []string{

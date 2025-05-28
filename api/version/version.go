@@ -5,6 +5,7 @@ import (
 
 	"github.com/gatechain/gatechainsdk/api/utils"
 	"github.com/gatechain/gatechainsdk/gatechain/context"
+	"github.com/gatechain/gatechainsdk/gatechain/rpc/spec/common"
 )
 
 type Service struct {
@@ -15,11 +16,12 @@ func NewService(ctx *context.NodeVaultQuerierImpl) *Service {
 	return &Service{ctx: ctx}
 }
 
-func (s *Service) Version() error {
+func (s *Service) Version() (response common.Version, err error) {
 	version, err := s.ctx.Client.Versions()
 	if err != nil {
 		fmt.Println(err)
-		return err
+		return response, err
 	}
-	return utils.JsonOutPut(version, s.ctx.GetCodec())
+	utils.JsonOutPut(version, s.ctx.GetCodec())
+	return version, nil
 }

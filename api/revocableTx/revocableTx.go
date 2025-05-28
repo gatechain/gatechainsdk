@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/gatechain/gatechainsdk/gatechain/auth/exported"
 
 	"github.com/gatechain/gatechainsdk/gatechain/auth"
 	"github.com/gatechain/gatechainsdk/gatechain/context"
@@ -20,27 +21,27 @@ func NewService(ctx *context.NodeVaultQuerierImpl) *Service {
 	return &Service{ctx: ctx}
 }
 
-func (s *Service) QueryTx(hashHexStr string) error {
+func (s *Service) QueryTx(hashHexStr string) (sdk.TxResponse, error) {
 	res, err := auth.QueryTx(s.ctx, hashHexStr)
 	if err != nil {
 		fmt.Println(err)
-		return err
+		return sdk.TxResponse{}, err
 	}
 	if res.Empty() {
 		err := fmt.Errorf("No transaction found with hash %s", hashHexStr)
 		fmt.Println(err)
-		return err
+		return sdk.TxResponse{}, err
 	}
 	fmt.Println(res)
-	return nil
+	return res, nil
 }
 
-func (s *Service) GetAccountRevocableTx(vaultAddr string) error {
+func (s *Service) GetAccountRevocableTx(vaultAddr string) (exported.RevocableTxCoinsArray, error) {
 	retriever := auth.NewVaultRetriever(s.ctx)
 	key, err := sdk.AccAddressFromBech32(vaultAddr)
 	if err != nil {
 		fmt.Println(err)
-		return err
+		return exported.RevocableTxCoinsArray{}, err
 	}
 	account, height, err := retriever.GetAccountWithHeight(key)
 	fmt.Println(account, height, err)
@@ -48,39 +49,39 @@ func (s *Service) GetAccountRevocableTx(vaultAddr string) error {
 	key, addressType, err := sdk.AccAddressTypeFromBech32(vaultAddr)
 	if err != nil {
 		fmt.Println(err)
-		return err
+		return exported.RevocableTxCoinsArray{}, err
 	}
 
 	if addressType != sdk.VaultAccount_type && addressType != sdk.MultiSignerVaultAccount {
 		err := errors.New("input account must be vault account")
 		fmt.Println(err)
-		return err
+		return exported.RevocableTxCoinsArray{}, err
 	}
 
 	if err := retriever.EnsureExists(key); err != nil {
 		fmt.Println(err)
-		return err
+		return exported.RevocableTxCoinsArray{}, err
 	}
 
 	height, err = s.ctx.GetChainHeight()
 	if err != nil {
 		fmt.Println(err)
-		return err
+		return exported.RevocableTxCoinsArray{}, err
 	}
 
 	vault, err := retriever.GetAccount(key)
 	if err != nil {
 		fmt.Println(err)
-		return err
+		return exported.RevocableTxCoinsArray{}, err
 	}
 
 	data, err := vault.GetRevocableTokensDetail(height)
 	if err != nil {
 		fmt.Println(err)
-		return err
+		return exported.RevocableTxCoinsArray{}, err
 	}
 	fmt.Println(data)
-	return nil
+	return data, nil
 }
 
 func (s *Service) RevocableTxSend(from_addr, to_addr, amount, fees, chainID string, gas uint64) error {

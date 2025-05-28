@@ -34,7 +34,6 @@ const (
 	FullFundraiserPath = "44'/669'/0'/0/0"
 
 	// PrefixAccount is the prefix for account keys
-	//PrefixAccount = "acc"
 	// PrefixValidator is the prefix for validator keys
 	PrefixValidator = ""
 	// PrefixConsensus is the prefix for consensus keys
@@ -91,7 +90,6 @@ var (
 // Address is a common interface for different types of addresses used by the SDK
 type Address interface {
 	Empty() bool
-	//Marshal() ([]byte, error)
 	MarshalJSON() ([]byte, error)
 	Bytes() []byte
 	String() string

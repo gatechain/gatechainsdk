@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/gatechain/gatechainsdk/gatechain/codec"
 	"github.com/gatechain/gatechainsdk/gatechain/node/appinterface"
 	"github.com/gatechain/gatechainsdk/gatechain/rpc/spec/v1"
 )
@@ -71,6 +72,18 @@ type ABCIMessageLog struct {
 	// Events contains a slice of Event objects that were emitted during some
 	// execution.
 	Events StringEvents `json:"events"`
+}
+
+// String implements the fmt.Stringer interface for the ABCIMessageLogs type.
+func (logs ABCIMessageLogs) String() (str string) {
+	if logs != nil {
+		raw, err := codec.Cdc.MarshalJSON(logs)
+		if err == nil {
+			str = string(raw)
+		}
+	}
+
+	return str
 }
 
 // TxResponse defines a structure containing relevant tx data and metadata. The

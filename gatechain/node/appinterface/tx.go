@@ -13,13 +13,13 @@ type Txid crypto.Digest
 // Might we want types here ?
 type Tx []byte
 
-// // Hash computes the TMHASH hash of the wire encoded transaction.
+// Hash computes the TMHASH hash of the wire encoded transaction.
 func (tx Tx) Hash() []byte {
 	txId := tx.ComputeID()
 	return txId[:]
 }
 
-// // String returns the hex-encoded transaction as a string.
+// String returns the hex-encoded transaction as a string.
 func (tx Tx) String() string {
 	return fmt.Sprintf("Tx{%X}", []byte(tx))
 }

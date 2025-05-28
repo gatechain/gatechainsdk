@@ -23,7 +23,6 @@ const (
 	// CodespaceRoot is a codespace for error codes in this file only.
 	// Notice that 0 is an "unset" codespace, which can be overridden with
 	// Error.WithDefaultCodespace().
-	//CodespaceUndefined CodespaceType = ""
 	CodespaceRoot CodespaceType = "framework"
 )
 

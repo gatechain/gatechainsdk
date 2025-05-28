@@ -2,6 +2,7 @@ package vaultAccount
 
 import (
 	"fmt"
+	"github.com/gatechain/gatechainsdk/gatechain/auth/exported"
 	"strconv"
 
 	"github.com/gatechain/gatechainsdk/gatechain/auth"
@@ -108,20 +109,20 @@ func (s *Service) BroadcastUpdateClearingHeightTx(clearTimeHeight, vaultAddr, fe
 	return nil
 }
 
-func (s *Service) QueryVaultAccount(vaultAddr string) error {
+func (s *Service) QueryVaultAccount(vaultAddr string) (exported.VaultAccount, error) {
 	retriever := auth.NewVaultRetriever(s.ctx)
 	key, err := sdk.AccAddressFromBech32(vaultAddr)
 	if err != nil {
 		fmt.Println(err)
-		return err
+		return nil, err
 	}
 	account, height, err := retriever.GetAccountWithHeight(key)
 	if err != nil {
 		fmt.Println(err)
-		return err
+		return nil, err
 	}
 	fmt.Println(account, height)
-	return nil
+	return account, nil
 }
 
 func (s *Service) ClearVaultAccountTx(fees, chainID string, vaultAddresses []string, gas uint64) error {
