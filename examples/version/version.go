@@ -1,5 +1,0 @@
-package version
-
-func main() {
-
-}

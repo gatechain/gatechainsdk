@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/gatechain/gatechainsdk/common"
 	"io/ioutil"
 	"os"
 
@@ -21,7 +22,7 @@ func CompleteAndBroadcastTxCLI(txBldr TxBuilder, cliCtx *context.NodeVaultQuerie
 	}
 	fromName := cliCtx.GetFromName()
 
-	passphrase := DefaultKeyPass
+	passphrase := common.DefaultKeyPass
 
 	txBytes, err := txBldr.BuildAndSign(fromName, passphrase, msgs)
 	if err != nil {
@@ -261,5 +262,5 @@ func SignStdTx(
 			return signedStdTx, err
 		}
 	}
-	return txBldr.SignStdTx(name, DefaultKeyPass, stdTx, appendSig)
+	return txBldr.SignStdTx(name, common.DefaultKeyPass, stdTx, appendSig)
 }

@@ -1,9 +1,15 @@
 package common
 
 var (
-	APIToken     = "a7de43d74b7323e82f6c561336b0d5b01d7f452e1cf4af23cd3e30f8b8582383"
-	EndPoint     = "http://124.243.187.49:80"
-	RootDir      = "/Users/michael/.gatecli"
+	APIToken     = "your_api_token"
+	EndPoint     = "http://your_server_ip:port"
+	RootDir      = "/your/local/path"
 	UnsignTxFile = "tx_unsign.json"
 	SignTxFile   = "tx_sign.json"
+)
+
+const (
+	// DefaultKeyPass contains the default key password for genesis transactions
+	DefaultKeyPass = "12345678"
+	MinKeyPassLen  = 8
 )

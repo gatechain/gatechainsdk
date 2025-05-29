@@ -2,6 +2,7 @@ package auth
 
 import (
 	"fmt"
+	"github.com/gatechain/gatechainsdk/common"
 	"strconv"
 	"time"
 
@@ -19,7 +20,7 @@ const (
 func CreateAccount(name, rootDir string) (keys.Info, error) {
 	var kb keys.Keybase
 	var err error
-	var encryptPassword = DefaultKeyPass
+	var encryptPassword = common.DefaultKeyPass
 
 	if len(name) == 0 {
 		name = fmt.Sprintf("%s", strconv.FormatInt(time.Now().Unix(), 10))
@@ -27,11 +28,11 @@ func CreateAccount(name, rootDir string) (keys.Info, error) {
 
 	showMnemonic := true
 
-	flagPwd := DefaultKeyPass
-	if len(flagPwd) >= MinKeyPassLen {
+	flagPwd := common.DefaultKeyPass
+	if len(flagPwd) >= common.MinKeyPassLen {
 		encryptPassword = flagPwd
 	} else if len(flagPwd) > 0 {
-		return nil, fmt.Errorf("password must be at least %d characters", MinKeyPassLen)
+		return nil, fmt.Errorf("password must be at least %d characters", common.MinKeyPassLen)
 	}
 	dryRun := false
 	if dryRun {
