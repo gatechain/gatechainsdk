@@ -1,8 +1,6 @@
 package version
 
 import (
-	"fmt"
-
 	"github.com/gatechain/gatechainsdk/api/utils"
 	"github.com/gatechain/gatechainsdk/gatechain/context"
 	"github.com/gatechain/gatechainsdk/gatechain/rpc/spec/common"
@@ -19,7 +17,6 @@ func NewService(ctx *context.NodeVaultQuerierImpl) *Service {
 func (s *Service) Version() (response common.Version, err error) {
 	version, err := s.ctx.Client.Versions()
 	if err != nil {
-		fmt.Println(err)
 		return response, err
 	}
 	utils.JsonOutPut(version, s.ctx.GetCodec())

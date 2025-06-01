@@ -1,6 +1,8 @@
 package exported
 
 import (
+	"fmt"
+	
 	"github.com/gatechain/gatechainsdk/gatechain/types"
 )
 
@@ -9,6 +11,23 @@ import (
 
 // RevocableTxCoinsArray revocabledTxCoins Array
 type RevocableTxCoinsArray []RevocableTxCoins
+
+func (txs RevocableTxCoinsArray) String() string {
+	result := fmt.Sprintln(`Txs: count `, len(txs))
+
+	for _, data := range txs {
+		result = result + fmt.Sprintf(`  TxHash:         REVOCABLEPAY-%s
+  Index:          %d
+  Height:         %d
+  Tokens:          %s
+`,
+
+			data.TxHash, data.Index, data.Height, data.Coins,
+		)
+	}
+
+	return result
+}
 
 // RevocableTxCoins - addRevocableTokens input struct
 type RevocableTxCoins struct {

@@ -11,7 +11,6 @@ import (
 func QueryParams(ctx *context.NodeVaultQuerierImpl) (common.PrettyParams, error) {
 	params, err := common.QueryParams(*ctx, types.ModuleName)
 	if err != nil {
-		fmt.Println(err)
 		return common.PrettyParams{}, err
 	}
 	ctx.PrintOutput(params)
@@ -22,14 +21,12 @@ func QueryValidatorOutstandingRewards(ctx *context.NodeVaultQuerierImpl, Validat
 	types.ValidatorOutstandingRewards, error) {
 	validatorValAddress, err := sdk.ValAddressFromBech32(ValidatorAddress)
 	if err != nil {
-		fmt.Println(err)
 		return types.ValidatorOutstandingRewards{}, err
 	}
 
 	params := types.NewQueryValidatorOutstandingRewardsParams(validatorValAddress)
 	bz, err := ctx.GetCodec().MarshalJSON(params)
 	if err != nil {
-		fmt.Println(err)
 		return types.ValidatorOutstandingRewards{}, err
 	}
 
@@ -38,13 +35,11 @@ func QueryValidatorOutstandingRewards(ctx *context.NodeVaultQuerierImpl, Validat
 		bz,
 	)
 	if err != nil {
-		fmt.Println(err)
 		return types.ValidatorOutstandingRewards{}, err
 	}
 
 	var outstandingRewards types.ValidatorOutstandingRewards
 	if err := ctx.GetCodec().UnmarshalJSON(resp, &outstandingRewards); err != nil {
-		fmt.Println(err)
 		return types.ValidatorOutstandingRewards{}, err
 	}
 	ctx.PrintOutput(outstandingRewards)
@@ -54,13 +49,11 @@ func QueryValidatorOutstandingRewards(ctx *context.NodeVaultQuerierImpl, Validat
 func QueryValidatorCommission(ctx *context.NodeVaultQuerierImpl, validatorAddr string) (types.ValidatorAccumulatedCommission, error) {
 	validatorValAddr, err := sdk.ValAddressFromBech32(validatorAddr)
 	if err != nil {
-		fmt.Println(err)
 		return types.ValidatorAccumulatedCommission{}, err
 	}
 
 	res, err := common.QueryValidatorCommission(*ctx, types.ModuleName, validatorValAddr)
 	if err != nil {
-		fmt.Println(err)
 		return types.ValidatorAccumulatedCommission{}, err
 	}
 
@@ -75,7 +68,6 @@ func QueryDelegatorRewards(ctx *context.NodeVaultQuerierImpl, args []string) err
 		// query for rewards from a particular delegation
 		resp, err := common.QueryDelegationRewards(*ctx, types.ModuleName, args[0], args[1])
 		if err != nil {
-			fmt.Println(err)
 			return err
 		}
 
@@ -88,7 +80,6 @@ func QueryDelegatorRewards(ctx *context.NodeVaultQuerierImpl, args []string) err
 	// query for delegator total rewards
 	resp, err := common.QueryDelegatorTotalRewards(*ctx, types.ModuleName, args[0])
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 
@@ -101,7 +92,6 @@ func QueryDelegatorRewards(ctx *context.NodeVaultQuerierImpl, args []string) err
 func QueryCommunityPool(ctx *context.NodeVaultQuerierImpl) (sdk.DecCoins, error) {
 	res, _, err := ctx.QueryWithData(fmt.Sprintf("custom/%s/community_pool", types.ModuleName), nil)
 	if err != nil {
-		fmt.Println(err)
 		return sdk.DecCoins{}, err
 	}
 

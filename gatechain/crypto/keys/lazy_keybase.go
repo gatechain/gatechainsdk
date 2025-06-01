@@ -65,6 +65,16 @@ func (lkb lazyKeybase) CreateAccount(name, mnemonic, bip39Passwd, encryptPasswd 
 	return newDbKeybase(db).CreateAccount(name, mnemonic, bip39Passwd, encryptPasswd, account, index)
 }
 
+func (lkb lazyKeybase) ImportPrivKey(name string, armor string, passphrase string) error {
+	db, err := types.NewLevelDB(lkb.name, lkb.dir)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	return newDbKeybase(db).ImportPrivKey(name, armor, passphrase)
+}
+
 func EnsureDir(dir string, mode os.FileMode) error {
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		err := os.MkdirAll(dir, mode)

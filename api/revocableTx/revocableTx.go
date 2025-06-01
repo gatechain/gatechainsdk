@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gatechain/gatechainsdk/gatechain/auth/exported"
+	"github.com/gatechain/gatechainsdk/gatechain/crypto/keys"
 
 	"github.com/gatechain/gatechainsdk/gatechain/auth"
 	"github.com/gatechain/gatechainsdk/gatechain/context"
@@ -24,12 +25,10 @@ func NewService(ctx *context.NodeVaultQuerierImpl) *Service {
 func (s *Service) QueryTx(hashHexStr string) (sdk.TxResponse, error) {
 	res, err := auth.QueryTx(s.ctx, hashHexStr)
 	if err != nil {
-		fmt.Println(err)
 		return sdk.TxResponse{}, err
 	}
 	if res.Empty() {
 		err := fmt.Errorf("No transaction found with hash %s", hashHexStr)
-		fmt.Println(err)
 		return sdk.TxResponse{}, err
 	}
 	fmt.Println(res)
@@ -40,7 +39,6 @@ func (s *Service) GetAccountRevocableTx(vaultAddr string) (exported.RevocableTxC
 	retriever := auth.NewVaultRetriever(s.ctx)
 	key, err := sdk.AccAddressFromBech32(vaultAddr)
 	if err != nil {
-		fmt.Println(err)
 		return exported.RevocableTxCoinsArray{}, err
 	}
 	account, height, err := retriever.GetAccountWithHeight(key)
@@ -48,66 +46,56 @@ func (s *Service) GetAccountRevocableTx(vaultAddr string) (exported.RevocableTxC
 
 	key, addressType, err := sdk.AccAddressTypeFromBech32(vaultAddr)
 	if err != nil {
-		fmt.Println(err)
 		return exported.RevocableTxCoinsArray{}, err
 	}
 
 	if addressType != sdk.VaultAccount_type && addressType != sdk.MultiSignerVaultAccount {
 		err := errors.New("input account must be vault account")
-		fmt.Println(err)
 		return exported.RevocableTxCoinsArray{}, err
 	}
 
 	if err := retriever.EnsureExists(key); err != nil {
-		fmt.Println(err)
 		return exported.RevocableTxCoinsArray{}, err
 	}
 
 	height, err = s.ctx.GetChainHeight()
 	if err != nil {
-		fmt.Println(err)
 		return exported.RevocableTxCoinsArray{}, err
 	}
 
 	vault, err := retriever.GetAccount(key)
 	if err != nil {
-		fmt.Println(err)
 		return exported.RevocableTxCoinsArray{}, err
 	}
 
 	data, err := vault.GetRevocableTokensDetail(height)
 	if err != nil {
-		fmt.Println(err)
 		return exported.RevocableTxCoinsArray{}, err
 	}
 	fmt.Println(data)
 	return data, nil
 }
 
-func (s *Service) RevocableTxSend(from_addr, to_addr, amount, fees, chainID string, gas uint64) error {
-	txBldr := auth.NewTxBuilderFromCLI(s.ctx.RootDir, fees, chainID, gas, s.ctx.Codec)
+func (s *Service) RevocableTxSend(from_addr, to_addr, amount, fees, chainID string, gas uint64, kb keys.Keybase) error {
+	txBldr := auth.NewTxBuilderFromCLIMemKeyBase(fees, chainID, gas, s.ctx.Codec, kb)
 	txBldr, err := auth.UpdateValidHeight(s.ctx, txBldr)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 
 	fromAccAddress, _, err := sdk.AccAddressTypeFromBech32(from_addr)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 
 	toAccAddress, _, err := sdk.AccAddressTypeFromBech32(to_addr)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 
 	// parse coins trying to be sent
 	coins, err := sdk.ParseCoins(amount)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 
@@ -115,61 +103,52 @@ func (s *Service) RevocableTxSend(from_addr, to_addr, amount, fees, chainID stri
 
 	txbytes, err := auth.CompleteAndBroadcastTxCLI(txBldr, s.ctx, []sdk.Msg{msg}, true)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 	fmt.Println(txbytes)
 	return nil
 }
 
-func (s *Service) RevokeTx(fromAddr, txHash, fees, chainID string, gas uint64) error {
+func (s *Service) RevokeTx(fromAddr, txHash, fees, chainID string, gas uint64, kb keys.Keybase) error {
 
-	txBldr := auth.NewTxBuilderFromCLI(s.ctx.RootDir, fees, chainID, gas, s.ctx.Codec)
+	txBldr := auth.NewTxBuilderFromCLIMemKeyBase(fees, chainID, gas, s.ctx.Codec, kb)
 	txBldr, err := auth.UpdateValidHeight(s.ctx, txBldr)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 
 	fromAccAddress, err := sdk.AccAddressFromBech32(fromAddr)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 	s.ctx.WithFromAddress(fromAccAddress)
 	if err := client.EnsureFromVaultAccount(*s.ctx); err != nil {
-		fmt.Println(err)
 		return err
 	}
 
 	txHash, err = auth.SplitTxHashPreFix(txHash)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 
 	// get tx detail
 	tx, err := auth.QueryTx(s.ctx, txHash)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 
 	vaultAccount, err := client.GetVaultAccount(*s.ctx, fromAccAddress)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 
 	height, err := s.ctx.GetChainHeight()
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 
 	data, err := client.GetRevocableTokens(*s.ctx, fromAccAddress, height)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 
@@ -183,7 +162,6 @@ func (s *Service) RevokeTx(fromAddr, txHash, fees, chainID string, gas uint64) e
 		if delayTxHash == txHash {
 			if index != delay.Index {
 				err := errors.New("index for revoke tx input error")
-				fmt.Println(err)
 				return err
 			}
 			delayHeight = delay.Height
@@ -214,7 +192,6 @@ func (s *Service) RevokeTx(fromAddr, txHash, fees, chainID string, gas uint64) e
 	msg := types.NewMsgRevoke(fromAccAddress, vaultAccount.GetSecurityAddress().Address, toAddress, int64(delayHeight), int64(index), txHash, coins)
 	txbytes, err := auth.CompleteAndBroadcastTxCLI(txBldr, s.ctx, []sdk.Msg{msg}, true)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 	fmt.Println(txbytes)
@@ -226,7 +203,6 @@ func (s *Service) TxStatus(hashHexStr string) error {
 	revGetter := types.NewRevocableRetriever(s.ctx)
 	txData, err := auth.QueryTx(s.ctx, hashHexStr)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 	if txData.Empty() {
@@ -235,13 +211,11 @@ func (s *Service) TxStatus(hashHexStr string) error {
 	}
 	hashStr, err := auth.SplitTxHashPreFix(hashHexStr)
 	if err != nil {
-		fmt.Println(err)
 		return err
 
 	}
 	hash, err := hex.DecodeString(hashStr)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 
@@ -256,18 +230,15 @@ func (s *Service) TxStatus(hashHexStr string) error {
 
 		key, _, err := sdk.AccAddressTypeFromBech32(sender)
 		if err != nil {
-			fmt.Println(err)
 			return err
 		}
 
 		if err := vaultGetter.EnsureExists(key); err != nil {
-			fmt.Println(err)
 			return err
 		}
 
 		vault, height, err := vaultGetter.GetAccountWithHeight(key)
 		if err != nil {
-			fmt.Println(err)
 			return err
 		}
 
@@ -281,7 +252,6 @@ func (s *Service) TxStatus(hashHexStr string) error {
 	}
 	err = s.ctx.PrintOutput(output)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 	return nil

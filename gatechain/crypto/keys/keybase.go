@@ -77,8 +77,9 @@ func (kb *dbKeybase) persistDerivedKey(seed []byte, passwd, name, fullHdPath str
 // Get returns the public information about one key.
 func (kb dbKeybase) Get(name string) (Info, error) {
 	bs, err := kb.db.Get(infoKey(name))
-	fmt.Println(err)
-
+	if err != nil {
+		return nil, err
+	}
 	if len(bs) == 0 {
 		return nil, keyerror.NewErrKeyNotFound(name)
 	}
@@ -87,13 +88,13 @@ func (kb dbKeybase) Get(name string) (Info, error) {
 
 func (kb dbKeybase) GetByAddress(address types.AccAddress) (Info, error) {
 	ik, err := kb.db.Get(addrKey(address))
-	fmt.Println(err)
-
+	if err != nil {
+		return nil, err
+	}
 	if len(ik) == 0 {
 		return nil, fmt.Errorf("key with address %s not found", address)
 	}
 	bs, err := kb.db.Get(ik)
-	fmt.Println(err)
 	return readInfo(bs)
 }
 
@@ -129,6 +130,25 @@ func (kb dbKeybase) Sign(name, passphrase string, msg []byte) (sig []byte, pub t
 
 	pub = priv.PubKey()
 	return sig, pub, nil
+}
+
+// ImportPrivKey imports a private key in ASCII armor format.
+// It returns an error if a key with the same name exists or a wrong encryption passphrase is
+// supplied.
+func (kb dbKeybase) ImportPrivKey(name string, armor string, passphrase string) error {
+	if _, err := kb.Get(name); err == nil {
+		err = fmt.Errorf("Cannot overwrite key " + name)
+		return err
+	}
+
+	privKey, err := mintkey.UnarmorDecryptPrivKey(armor, passphrase)
+	if err != nil {
+		err = fmt.Errorf("couldn't import private key")
+		return err
+	}
+
+	kb.writeLocalKey(name, privKey, passphrase)
+	return nil
 }
 
 // CloseDB releases the lock and closes the storage backend.

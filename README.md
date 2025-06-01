@@ -9,7 +9,6 @@ Before using the SDK, you'll need to configure these settings in `const.go` unde
 ``` go
 EndPoint := "your_server_ip:port"  // Modify to your own server's IP and port
 APIToken := "your_api_token"      // Set to the token used to connect to GateChain
-RootDir := "/your/local/path"     // Set to the local directory where your keys are stored
 ```
 
 Installation & Testing

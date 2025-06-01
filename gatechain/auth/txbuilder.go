@@ -5,7 +5,6 @@ import (
 	"fmt"
 	gmhash "github.com/gatechain/crypto"
 
-	"github.com/gatechain/gatechainsdk/common"
 	"github.com/gatechain/gatechainsdk/gatechain/codec"
 	"github.com/gatechain/gatechainsdk/gatechain/crypto"
 	crkeys "github.com/gatechain/gatechainsdk/gatechain/crypto/keys"
@@ -36,6 +35,22 @@ func NewTxBuilderFromCLI(rootDir, fees, chainID string, gas uint64, cdc *codec.C
 		panic(err)
 	}
 
+	uuid, _ := types.NewV4()
+	nonce := gmhash.Hash(uuid[:])
+	txbldr := TxBuilder{
+		keybase: kb,
+		nonce:   nonce[:],
+		chainID: chainID,
+	}
+	txbldr = txbldr.WithTxEncoder(DefaultTxEncoder(cdc))
+	txbldr = txbldr.WithFees(fees) //fees "100000000NANOGT"
+	txbldr = txbldr.WithGas(gas)   //gas  200000
+	return txbldr
+}
+
+// NewTxBuilderFromCLI returns a new initialized TxBuilder with parameters from
+// the command line using Viper.
+func NewTxBuilderFromCLIMemKeyBase(fees, chainID string, gas uint64, cdc *codec.Codec, kb crkeys.Keybase) TxBuilder {
 	uuid, _ := types.NewV4()
 	nonce := gmhash.Hash(uuid[:])
 	txbldr := TxBuilder{
@@ -215,7 +230,7 @@ func (bldr TxBuilder) SignStdTx(name, passphrase string, stdTx StdTx, appendSig 
 func MakeSignature(keybase crkeys.Keybase, name, passphrase string,
 	msg StdSignMsg) (sig StdSignature, err error) {
 	if keybase == nil {
-		keybase, err = crypto.NewKeyBaseFromDir(common.RootDir)
+		keybase, err = crypto.NewKeyBaseFromDir("")
 		if err != nil {
 			return
 		}

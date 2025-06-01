@@ -1,7 +1,7 @@
 package staking
 
 import (
-	"fmt"
+	"github.com/gatechain/gatechainsdk/gatechain/crypto/keys"
 	"github.com/gatechain/gatechainsdk/gatechain/staking/types"
 
 	"github.com/gatechain/gatechainsdk/gatechain/auth"
@@ -79,44 +79,41 @@ func (s *Service) QueryParams() (types.Params, error) {
 }
 
 // GetDelegate implements the delegate command.
-func (s *Service) GetDelegate(amountStr, delegatorAddress, validatorAddr, fees, chainID string, gas uint64) error {
-	txBldr := auth.NewTxBuilderFromCLI(s.ctx.RootDir, fees, chainID, gas, s.ctx.Codec)
+func (s *Service) GetDelegate(amountStr, delegatorAddress, validatorAddr, fees, chainID string, gas uint64, kb keys.Keybase) error {
+	txBldr := auth.NewTxBuilderFromCLIMemKeyBase(fees, chainID, gas, s.ctx.Codec, kb)
 	txBldr, err := auth.UpdateValidHeight(s.ctx, txBldr)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 	return cli.GetDelegate(s.ctx, txBldr, amountStr, delegatorAddress, validatorAddr)
 }
 
 // GetRedelegate the begin redelegation command.
-func (s *Service) GetRedelegate(delAddr, fees, chainID string, gas uint64, args []string) error {
-	txBldr := auth.NewTxBuilderFromCLI(s.ctx.RootDir, fees, chainID, gas, s.ctx.Codec)
+func (s *Service) GetRedelegate(delAddr, fees, chainID string, gas uint64, args []string, kb keys.Keybase) error {
+	txBldr := auth.NewTxBuilderFromCLIMemKeyBase(fees, chainID, gas, s.ctx.Codec, kb)
 	txBldr, err := auth.UpdateValidHeight(s.ctx, txBldr)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 	return cli.GetRedelegate(s.ctx, txBldr, delAddr, args)
 }
 
 // GetUnbond implements the unbond validator command.
-func (s *Service) GetUnbond(amountStr, delegatorAddress, validatorAddr, fees, chainID string, gas uint64) error {
-	txBldr := auth.NewTxBuilderFromCLI(s.ctx.RootDir, fees, chainID, gas, s.ctx.Codec)
+func (s *Service) GetUnbond(amountStr, delegatorAddress, validatorAddr, fees, chainID string, gas uint64, kb keys.Keybase) error {
+	txBldr := auth.NewTxBuilderFromCLIMemKeyBase(fees, chainID, gas, s.ctx.Codec, kb)
+
 	txBldr, err := auth.UpdateValidHeight(s.ctx, txBldr)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 	return cli.GetUnbond(s.ctx, txBldr, amountStr, delegatorAddress, validatorAddr)
 }
 
 // GetUnbond implements the unbond validator command by SecurityAddress
-func (s *Service) GetUnbondBySecAddr(fees, chainID string, gas uint64, args []string) error {
-	txBldr := auth.NewTxBuilderFromCLI(s.ctx.RootDir, fees, chainID, gas, s.ctx.Codec)
+func (s *Service) GetUnbondBySecAddr(fees, chainID string, gas uint64, args []string, kb keys.Keybase) error {
+	txBldr := auth.NewTxBuilderFromCLIMemKeyBase(fees, chainID, gas, s.ctx.Codec, kb)
 	txBldr, err := auth.UpdateValidHeight(s.ctx, txBldr)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 	return cli.GetUnbondBySecAddr(s.ctx, txBldr, args)

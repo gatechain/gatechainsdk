@@ -13,20 +13,17 @@ func QueryValidatorUnbondingDelegations(ctx *context.NodeVaultQuerierImpl, Valid
 
 	ValidatorAccAddr, err := sdk.ValAddressFromBech32(ValidatorAddr)
 	if err != nil {
-		fmt.Println(err)
 		return types.UnbondingDelegations{}, err
 	}
 
 	bz, err := ctx.GetCodec().MarshalJSON(types.NewQueryValidatorParams(ValidatorAccAddr))
 	if err != nil {
-		fmt.Println(err)
 		return types.UnbondingDelegations{}, err
 	}
 
 	route := fmt.Sprintf("custom/%s/%s", types.ModuleName, types.QueryValidatorUnbondingDelegations)
 	res, _, err := ctx.QueryWithData(route, bz)
 	if err != nil {
-		fmt.Println(err)
 		return types.UnbondingDelegations{}, err
 	}
 
@@ -41,26 +38,22 @@ func QueryValidatorUnbondingDelegations(ctx *context.NodeVaultQuerierImpl, Valid
 func QueryValidatorRedelegations(ctx *context.NodeVaultQuerierImpl, SrcValidatorAddr string) (types.RedelegationResponses, error) {
 	SrcValidatorValAddr, err := sdk.ValAddressFromBech32(SrcValidatorAddr)
 	if err != nil {
-		fmt.Println(err)
 		return types.RedelegationResponses{}, err
 	}
 
 	bz, err := ctx.GetCodec().MarshalJSON(types.QueryRedelegationParams{SrcValidatorAddr: SrcValidatorValAddr})
 	if err != nil {
-		fmt.Println(err)
 		return types.RedelegationResponses{}, err
 	}
 
 	route := fmt.Sprintf("custom/%s/%s", types.ModuleName, types.QueryRedelegations)
 	res, _, err := ctx.QueryWithData(route, bz)
 	if err != nil {
-		fmt.Println(err)
 		return types.RedelegationResponses{}, err
 	}
 
 	var resp types.RedelegationResponses
 	if err := ctx.GetCodec().UnmarshalJSON(res, &resp); err != nil {
-		fmt.Println(err)
 		return types.RedelegationResponses{}, err
 	}
 	ctx.PrintOutput(resp)
@@ -73,32 +66,27 @@ func QueryDelegation(ctx *context.NodeVaultQuerierImpl, delegatorAddr, validator
 
 	delegatorAccAddr, err := sdk.AccAddressFromBech32(delegatorAddr)
 	if err != nil {
-		fmt.Println(err)
 		return types.DelegationResponse{}, err
 	}
 
 	validatorAccAddr, err := sdk.ValAddressFromBech32(validatorAddr)
 	if err != nil {
-		fmt.Println(err)
 		return types.DelegationResponse{}, err
 	}
 
 	bz, err := ctx.GetCodec().MarshalJSON(types.NewQueryBondsParams(delegatorAccAddr, validatorAccAddr))
 	if err != nil {
-		fmt.Println(err)
 		return types.DelegationResponse{}, err
 	}
 
 	route := fmt.Sprintf("custom/%s/%s", types.ModuleName, types.QueryDelegation)
 	res, _, err := ctx.QueryWithData(route, bz)
 	if err != nil {
-		fmt.Println(err)
 		return types.DelegationResponse{}, err
 	}
 
 	var resp types.DelegationResponse
 	if err := ctx.GetCodec().UnmarshalJSON(res, &resp); err != nil {
-		fmt.Println(err)
 		return types.DelegationResponse{}, err
 	}
 	ctx.PrintOutput(resp)
@@ -110,26 +98,22 @@ func QueryDelegation(ctx *context.NodeVaultQuerierImpl, delegatorAddr, validator
 func QueryDelegations(ctx *context.NodeVaultQuerierImpl, delegatorAddr string) (types.DelegationResponses, error) {
 	delegatorAccAddr, err := sdk.AccAddressFromBech32(delegatorAddr)
 	if err != nil {
-		fmt.Println(err)
 		return types.DelegationResponses{}, err
 	}
 
 	bz, err := ctx.GetCodec().MarshalJSON(types.NewQueryDelegatorParams(delegatorAccAddr))
 	if err != nil {
-		fmt.Println(err)
 		return types.DelegationResponses{}, err
 	}
 
 	route := fmt.Sprintf("custom/%s/%s", types.ModuleName, types.QueryDelegatorDelegations)
 	res, _, err := ctx.QueryWithData(route, bz)
 	if err != nil {
-		fmt.Println(err)
 		return types.DelegationResponses{}, err
 	}
 
 	var resp types.DelegationResponses
 	if err := ctx.GetCodec().UnmarshalJSON(res, &resp); err != nil {
-		fmt.Println(err)
 		return types.DelegationResponses{}, err
 	}
 	ctx.PrintOutput(resp)
@@ -143,26 +127,22 @@ func QueryValidatorDelegations(ctx *context.NodeVaultQuerierImpl, delegatorAddr 
 
 	delegatorAccAddr, err := sdk.ValAddressFromBech32(delegatorAddr)
 	if err != nil {
-		fmt.Println(err)
 		return types.DelegationResponses{}, err
 	}
 
 	bz, err := ctx.GetCodec().MarshalJSON(types.NewQueryValidatorParams(delegatorAccAddr))
 	if err != nil {
-		fmt.Println(err)
 		return types.DelegationResponses{}, err
 	}
 
 	route := fmt.Sprintf("custom/%s/%s", types.ModuleName, types.QueryValidatorDelegations)
 	res, _, err := ctx.QueryWithData(route, bz)
 	if err != nil {
-		fmt.Println(err)
 		return types.DelegationResponses{}, err
 	}
 
 	var resp types.DelegationResponses
 	if err := ctx.GetCodec().UnmarshalJSON(res, &resp); err != nil {
-		fmt.Println(err)
 		return types.DelegationResponses{}, err
 	}
 	ctx.PrintOutput(resp)
@@ -175,32 +155,27 @@ func QueryUnbondingDelegation(ctx *context.NodeVaultQuerierImpl, delegatorAddr, 
 
 	validatorAccAddr, err := sdk.ValAddressFromBech32(validatorAddr)
 	if err != nil {
-		fmt.Println(err)
 		return types.UnbondingDelegation{}, err
 	}
 
 	delAccAddr, err := sdk.AccAddressFromBech32(delegatorAddr)
 	if err != nil {
-		fmt.Println(err)
 		return types.UnbondingDelegation{}, err
 	}
 
 	bz, err := ctx.GetCodec().MarshalJSON(types.NewQueryBondsParams(delAccAddr, validatorAccAddr))
 	if err != nil {
-		fmt.Println(err)
 		return types.UnbondingDelegation{}, err
 	}
 
 	route := fmt.Sprintf("custom/%s/%s", types.ModuleName, types.QueryUnbondingDelegation)
 	res, _, err := ctx.QueryWithData(route, bz)
 	if err != nil {
-		fmt.Println(err)
 		return types.UnbondingDelegation{}, err
 	}
 
 	var resp types.UnbondingDelegation
 	if err := ctx.GetCodec().UnmarshalJSON(res, &resp); err != nil {
-		fmt.Println(err)
 		return types.UnbondingDelegation{}, err
 	}
 	ctx.PrintOutput(resp)
@@ -213,26 +188,22 @@ func QueryUnbondingDelegations(ctx *context.NodeVaultQuerierImpl, delegatorAddr 
 
 	delegatorAccAddr, err := sdk.AccAddressFromBech32(delegatorAddr)
 	if err != nil {
-		fmt.Println(err)
 		return types.UnbondingDelegations{}, err
 	}
 
 	bz, err := ctx.GetCodec().MarshalJSON(types.NewQueryDelegatorParams(delegatorAccAddr))
 	if err != nil {
-		fmt.Println(err)
 		return types.UnbondingDelegations{}, err
 	}
 
 	route := fmt.Sprintf("custom/%s/%s", types.ModuleName, types.QueryDelegatorUnbondingDelegations)
 	res, _, err := ctx.QueryWithData(route, bz)
 	if err != nil {
-		fmt.Println(err)
 		return types.UnbondingDelegations{}, err
 	}
 
 	var resp types.UnbondingDelegations
 	if err := ctx.GetCodec().UnmarshalJSON(res, &resp); err != nil {
-		fmt.Println(err)
 		return types.UnbondingDelegations{}, err
 	}
 	ctx.PrintOutput(resp)
@@ -243,38 +214,32 @@ func QueryRedelegation(ctx *context.NodeVaultQuerierImpl, args []string) (types.
 
 	delAddr, err := sdk.AccAddressFromBech32(args[0])
 	if err != nil {
-		fmt.Println(err)
 		return types.RedelegationResponses{}, err
 	}
 
 	valSrcAddr, err := sdk.ValAddressFromBech32(args[1])
 	if err != nil {
-		fmt.Println(err)
 		return types.RedelegationResponses{}, err
 	}
 
 	valDstAddr, err := sdk.ValAddressFromBech32(args[2])
 	if err != nil {
-		fmt.Println(err)
 		return types.RedelegationResponses{}, err
 	}
 
 	bz, err := ctx.GetCodec().MarshalJSON(types.NewQueryRedelegationParams(delAddr, valSrcAddr, valDstAddr))
 	if err != nil {
-		fmt.Println(err)
 		return types.RedelegationResponses{}, err
 	}
 
 	route := fmt.Sprintf("custom/%s/%s", types.ModuleName, types.QueryRedelegations)
 	res, _, err := ctx.QueryWithData(route, bz)
 	if err != nil {
-		fmt.Println(err)
 		return types.RedelegationResponses{}, err
 	}
 
 	var resp types.RedelegationResponses
 	if err := ctx.GetCodec().UnmarshalJSON(res, &resp); err != nil {
-		fmt.Println(err)
 		return types.RedelegationResponses{}, err
 	}
 	ctx.PrintOutput(resp)
@@ -286,26 +251,22 @@ func QueryRedelegation(ctx *context.NodeVaultQuerierImpl, args []string) (types.
 func QueryRedelegations(ctx *context.NodeVaultQuerierImpl, delegatorAddr string) (types.RedelegationResponses, error) {
 	delAddr, err := sdk.AccAddressFromBech32(delegatorAddr)
 	if err != nil {
-		fmt.Println(err)
 		return types.RedelegationResponses{}, err
 	}
 
 	bz, err := ctx.GetCodec().MarshalJSON(types.QueryRedelegationParams{DelegatorAddr: delAddr})
 	if err != nil {
-		fmt.Println(err)
 		return types.RedelegationResponses{}, err
 	}
 
 	route := fmt.Sprintf("custom/%s/%s", types.ModuleName, types.QueryRedelegations)
 	res, _, err := ctx.QueryWithData(route, bz)
 	if err != nil {
-		fmt.Println(err)
 		return types.RedelegationResponses{}, err
 	}
 
 	var resp types.RedelegationResponses
 	if err := ctx.GetCodec().UnmarshalJSON(res, &resp); err != nil {
-		fmt.Println(err)
 		return types.RedelegationResponses{}, err
 	}
 	ctx.PrintOutput(resp)
@@ -317,13 +278,11 @@ func QueryPool(ctx *context.NodeVaultQuerierImpl) (types.Pool, error) {
 
 	bz, _, err := ctx.QueryWithData(fmt.Sprintf("custom/%s/pool", types.ModuleName), nil)
 	if err != nil {
-		fmt.Println(err)
 		return types.Pool{}, err
 	}
 
 	var pool types.Pool
 	if err := ctx.GetCodec().UnmarshalJSON(bz, &pool); err != nil {
-		fmt.Println(err)
 		return types.Pool{}, err
 	}
 	ctx.PrintOutput(pool)
@@ -335,7 +294,6 @@ func QueryParams(ctx *context.NodeVaultQuerierImpl) (types.Params, error) {
 	route := fmt.Sprintf("custom/%s/%s", types.ModuleName, types.QueryParameters)
 	bz, _, err := ctx.QueryWithData(route, nil)
 	if err != nil {
-		fmt.Println(err)
 		return types.Params{}, err
 	}
 

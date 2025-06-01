@@ -3,7 +3,6 @@ package common
 var (
 	APIToken     = "your_api_token"
 	EndPoint     = "http://your_server_ip:port"
-	RootDir      = "/your/local/path"
 	UnsignTxFile = "tx_unsign.json"
 	SignTxFile   = "tx_sign.json"
 )

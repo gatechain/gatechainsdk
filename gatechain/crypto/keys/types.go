@@ -14,6 +14,8 @@ type Keybase interface {
 
 	// CreateAccount creates an account based using the BIP44 path (44'/118'/{account}'/0/{index}
 	CreateAccount(name, mnemonic, bip39Passwd, encryptPasswd string, account uint32, index uint32) (Info, error)
+
+	ImportPrivKey(name, armor, passphrase string) error
 }
 
 // KeyType reflects a human-readable type for key listing.

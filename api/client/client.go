@@ -13,6 +13,7 @@ import (
 	"github.com/gatechain/gatechainsdk/api/vaultAccount"
 	"github.com/gatechain/gatechainsdk/api/version"
 	"github.com/gatechain/gatechainsdk/gatechain/context"
+	"github.com/gatechain/gatechainsdk/gatechain/crypto/keys"
 )
 
 type Client struct {
@@ -90,9 +91,9 @@ func NewClientWithFrom(from, endpoint, API_TOKEN, rootDir string) *Client {
 	}
 }
 
-func NewClientGenOnly(genOnly bool, fileName, endpoint, API_TOKEN, rootDir string) *Client {
+func NewClientWithFromMemKeyBase(from, endpoint, API_TOKEN string, kb keys.Keybase) *Client {
 	cdc := utils.MakeCodec()
-	ctx := context.NewNodeVaultQuerierImplGenOnly(genOnly, fileName, endpoint, API_TOKEN)
+	ctx := context.NewCLIContextWithFromMemKeyBase(from, endpoint, API_TOKEN, kb)
 	ctx.WithCodec(cdc)
 	staking := staking.NewService(ctx)
 	accout := account.NewService(ctx)

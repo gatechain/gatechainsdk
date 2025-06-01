@@ -22,7 +22,6 @@ func BroadcastSignTx(cliCtx *context.NodeVaultQuerierImpl, filename string) erro
 
 	res, err := cliCtx.Client.BroadcastTx(txBytes)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 	fmt.Println(res)

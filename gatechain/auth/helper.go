@@ -9,7 +9,6 @@ import (
 	"github.com/cosmos/go-bip39"
 
 	"github.com/gatechain/gatechainsdk/gatechain/codec"
-	"github.com/gatechain/gatechainsdk/gatechain/crypto"
 	"github.com/gatechain/gatechainsdk/gatechain/crypto/keys"
 )
 
@@ -17,7 +16,7 @@ const (
 	MnemonicEntropySize = 256
 )
 
-func CreateAccount(name, rootDir string) (keys.Info, error) {
+func CreateAccount(name string) (keys.Info, error) {
 	var kb keys.Keybase
 	var err error
 	var encryptPassword = common.DefaultKeyPass
@@ -34,28 +33,9 @@ func CreateAccount(name, rootDir string) (keys.Info, error) {
 	} else if len(flagPwd) > 0 {
 		return nil, fmt.Errorf("password must be at least %d characters", common.MinKeyPassLen)
 	}
-	dryRun := false
-	if dryRun {
-		// we throw this away, so don't enforce args,
-		// we want to get a new random seed phrase quickly
-		kb = keys.NewInMemory()
-	} else {
-		kb, err = crypto.NewKeyBaseFromDir(rootDir)
-		if err != nil {
-			return nil, err
-		}
-		if err != nil {
-			return nil, err
-		}
 
-		_, err = kb.Get(name)
-		if err == nil {
-			return nil, err
-		}
-	}
+	kb = keys.NewInMemory()
 
-	//account := uint32(viper.GetInt(flagAccount))
-	//index := uint32(viper.GetInt(flagIndex))
 	account := uint32(0)
 	index := uint32(0)
 

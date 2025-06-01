@@ -1,7 +1,6 @@
 package block
 
 import (
-	"fmt"
 	v1 "github.com/gatechain/gatechainsdk/gatechain/rpc/spec/v1"
 
 	"github.com/gatechain/gatechainsdk/api/utils"
@@ -24,7 +23,6 @@ func (s *Service) Block(blockHeight uint64) (response v1.Block, err error) {
 
 	block, err := s.ctx.Client.Block(uint64(height))
 	if err != nil {
-		fmt.Println(err)
 		return v1.Block{}, err
 	}
 	cdc := utils.MakeCodec()

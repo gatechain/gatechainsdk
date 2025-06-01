@@ -9,7 +9,6 @@ import (
 
 	errors_pkg "github.com/pkg/errors"
 
-	"github.com/gatechain/gatechainsdk/common"
 	"github.com/gatechain/gatechainsdk/gatechain/codec"
 	"github.com/gatechain/gatechainsdk/gatechain/crypto"
 	"github.com/gatechain/gatechainsdk/gatechain/crypto/keys"
@@ -36,7 +35,6 @@ type NodeVaultQuerierImpl struct {
 func NewNodeVaultQuerierImpl(endpoint, API_TOKEN string) *NodeVaultQuerierImpl {
 	clientUrl, err := url.Parse(endpoint)
 	if err != nil {
-		fmt.Println(err)
 	}
 	restClient := client.MakeRestClient(*clientUrl, API_TOKEN)
 
@@ -48,28 +46,10 @@ func NewNodeVaultQuerierImpl(endpoint, API_TOKEN string) *NodeVaultQuerierImpl {
 	}
 }
 
-func NewNodeVaultQuerierImplGenOnly(genOnly bool, fileName, endpoint, API_TOKEN string) *NodeVaultQuerierImpl {
-	clientUrl, err := url.Parse(endpoint)
-	if err != nil {
-		fmt.Println(err)
-	}
-	restClient := client.MakeRestClient(*clientUrl, API_TOKEN)
-
-	return &NodeVaultQuerierImpl{
-		Client: &restClient,
-
-		OutputFormat:   crypto.OutputFormatText,
-		Indent:         false,
-		GenerateOnly:   genOnly,
-		Output:         os.Stdout,
-		OutputFileName: fileName,
-	}
-}
-
 func NewCLIContextWithFrom(from, endpoint, API_TOKEN, rootDir string) *NodeVaultQuerierImpl {
 	clientUrl, err := url.Parse(endpoint)
 	if err != nil {
-		fmt.Println(err)
+		return nil
 	}
 	restClient := client.MakeRestClient(*clientUrl, API_TOKEN)
 	fromAddress, fromName, err := GetFromFields(from, false)
@@ -85,6 +65,28 @@ func NewCLIContextWithFrom(from, endpoint, API_TOKEN, rootDir string) *NodeVault
 		FromAddress:  fromAddress,
 		FromName:     fromName,
 		RootDir:      rootDir,
+	}
+}
+
+func NewCLIContextWithFromMemKeyBase(from, endpoint, API_TOKEN string, kb keys.Keybase) *NodeVaultQuerierImpl {
+	clientUrl, err := url.Parse(endpoint)
+	if err != nil {
+		return nil
+	}
+	restClient := client.MakeRestClient(*clientUrl, API_TOKEN)
+	fromAddress, fromName, err := GetFromFieldsMemKeyBase(from, false, kb)
+	if err != nil {
+		fmt.Printf("failed to get from fields: %v", err)
+		os.Exit(1)
+	}
+	return &NodeVaultQuerierImpl{
+		Client:       &restClient,
+		Output:       os.Stdout,
+		OutputFormat: crypto.OutputFormatText,
+		Indent:       false,
+		FromAddress:  fromAddress,
+		FromName:     fromName,
+		RootDir:      "",
 	}
 }
 
@@ -209,7 +211,7 @@ func GetFromFields(from string, genOnly bool) (types.AccAddress, string, error) 
 		return addr, "", nil
 	}
 
-	keybase, err := crypto.NewKeyBaseFromDir(common.RootDir)
+	keybase, err := crypto.NewKeyBaseFromDir("")
 	if err != nil {
 		return nil, "", err
 	}
@@ -222,6 +224,27 @@ func GetFromFields(from string, genOnly bool) (types.AccAddress, string, error) 
 		}
 	} else {
 		info, err = keybase.Get(from)
+		if err != nil {
+			return nil, "", err
+		}
+	}
+
+	return info.GetAddress(), info.GetName(), nil
+}
+
+func GetFromFieldsMemKeyBase(from string, genOnly bool, kb keys.Keybase) (types.AccAddress, string, error) {
+	if from == "" {
+		return nil, "", nil
+	}
+
+	var info keys.Info
+	if addr, _, err := types.AccAddressTypeFromBech32(from); err == nil {
+		info, err = kb.GetByAddress(addr)
+		if err != nil {
+			return nil, "", err
+		}
+	} else {
+		info, err = kb.Get(from)
 		if err != nil {
 			return nil, "", err
 		}

@@ -29,7 +29,6 @@ func JsonOutPut(o interface{}, cdc *codec.Codec) error {
 	var jsonString []byte
 	jsonString, err := cdc.MarshalJSONIndent(o, "", "  ")
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 	fmt.Println(string(jsonString))

@@ -16,8 +16,7 @@ func TestQueryAccount(t *testing.T) {
 func TestCreateAccount(t *testing.T) {
 	client := client.NewClient(common.EndPoint, common.APIToken)
 	name := ""
-	rootDir := common.RootDir
-	client.Account.CreateAccount(name, rootDir)
+	client.Account.CreateAccount(name)
 }
 
 func TestGetAccountBlance(t *testing.T) {

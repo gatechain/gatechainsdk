@@ -7,6 +7,7 @@ import (
 	"github.com/gatechain/gatechainsdk/gatechain/auth/client/cli"
 	"github.com/gatechain/gatechainsdk/gatechain/bank"
 	"github.com/gatechain/gatechainsdk/gatechain/context"
+	"github.com/gatechain/gatechainsdk/gatechain/crypto/keys"
 	"github.com/gatechain/gatechainsdk/gatechain/types"
 )
 
@@ -23,22 +24,18 @@ func (s *Service) CreateUnsignTX(from_addr, to_addr, amount, unsignTxFileName st
 	txBldr := auth.NewTxBuilderFromCLI(s.ctx.RootDir, fees, chainID, gas, s.ctx.Codec)
 	txBldr, err := auth.UpdateValidHeight(s.ctx, txBldr)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 	toAccAddress, _, err := types.AccAddressTypeFromBech32(to_addr)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 	fromAccAddress, _, err := types.AccAddressTypeFromBech32(from_addr)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 	coins, err := types.ParseCoins(amount)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 	// build and sign the transaction, then broadcast to Tendermint
@@ -48,11 +45,10 @@ func (s *Service) CreateUnsignTX(from_addr, to_addr, amount, unsignTxFileName st
 }
 
 // sign UnsignTxFile to SignTxFile
-func (s *Service) CreateSignTX(UnsignTxFile, SignTxFile string, fees, chainID string, gas uint64) error {
-	txBldr := auth.NewTxBuilderFromCLI(s.ctx.RootDir, fees, chainID, gas, s.ctx.Codec)
+func (s *Service) CreateSignTX(UnsignTxFile, SignTxFile string, fees, chainID string, gas uint64, kb keys.Keybase) error {
+	txBldr := auth.NewTxBuilderFromCLIMemKeyBase(fees, chainID, gas, s.ctx.Codec, kb)
 	txBldr, err := auth.UpdateValidHeight(s.ctx, txBldr)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 	return cli.CreateSignTX(UnsignTxFile, SignTxFile, s.ctx, txBldr)
@@ -64,28 +60,24 @@ func (s *Service) BroadcastSignTx(SignedFileName string) error {
 }
 
 // create  and send tx
-func (s *Service) SendTX(from_addr, to_addr, amount, fees, chainID string, gas uint64) error {
+func (s *Service) SendTX(from_addr, to_addr, amount, fees, chainID string, gas uint64, kb keys.Keybase) error {
 
-	txBldr := auth.NewTxBuilderFromCLI(s.ctx.RootDir, fees, chainID, gas, s.ctx.Codec)
+	txBldr := auth.NewTxBuilderFromCLIMemKeyBase(fees, chainID, gas, s.ctx.Codec, kb)
 	txBldr, err := auth.UpdateValidHeight(s.ctx, txBldr)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 
 	toAccAddress, _, err := types.AccAddressTypeFromBech32(to_addr)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 	fromAccAddress, _, err := types.AccAddressTypeFromBech32(from_addr)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 	coins, err := types.ParseCoins(amount)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 	// build and sign the transaction, then broadcast to Tendermint
@@ -93,7 +85,6 @@ func (s *Service) SendTX(from_addr, to_addr, amount, fees, chainID string, gas u
 	fmt.Println(msg)
 	txbytes, err := auth.CompleteAndBroadcastTxCLI(txBldr, s.ctx, []types.Msg{msg}, true)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 	fmt.Println(txbytes)
@@ -104,12 +95,10 @@ func (s *Service) SendTX(from_addr, to_addr, amount, fees, chainID string, gas u
 func (s *Service) QueryTX(hashHexStr string) (types.TxResponse, error) {
 	res, err := auth.QueryTx(s.ctx, hashHexStr)
 	if err != nil {
-		fmt.Println(err)
 		return types.TxResponse{}, err
 	}
 	if res.Empty() {
 		err := fmt.Errorf("No transaction found with hash %s", hashHexStr)
-		fmt.Println(err)
 		return types.TxResponse{}, err
 	}
 	fmt.Println(res)

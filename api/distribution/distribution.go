@@ -1,7 +1,7 @@
 package distribution
 
 import (
-	"fmt"
+	"github.com/gatechain/gatechainsdk/gatechain/crypto/keys"
 	"github.com/gatechain/gatechainsdk/gatechain/distribution/client/common"
 	"github.com/gatechain/gatechainsdk/gatechain/distribution/types"
 	sdk "github.com/gatechain/gatechainsdk/gatechain/types"
@@ -44,43 +44,39 @@ func (s *Service) QueryCommunityPool() (sdk.DecCoins, error) {
 }
 
 // command to withdraw rewards
-func (s *Service) WithdrawRewards(delegatorAddress, validatorAddress string, bComission bool, fees, chainID string, gas uint64) error {
-	txBldr := auth.NewTxBuilderFromCLI(s.ctx.RootDir, fees, chainID, gas, s.ctx.Codec)
+func (s *Service) WithdrawRewards(delegatorAddress, validatorAddress string, bComission bool, fees, chainID string, gas uint64, kb keys.Keybase) error {
+	txBldr := auth.NewTxBuilderFromCLIMemKeyBase(fees, chainID, gas, s.ctx.Codec, kb)
 	txBldr, err := auth.UpdateValidHeight(s.ctx, txBldr)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 	return cli.WithdrawRewards(s.ctx, txBldr, delegatorAddress, validatorAddress, bComission)
 }
 
 // command to withdraw all rewards
-func (s *Service) WithdrawAllRewards(delegatorAddr string, fees, chainID string, gas uint64) error {
-	txBldr := auth.NewTxBuilderFromCLI(s.ctx.RootDir, fees, chainID, gas, s.ctx.Codec)
+func (s *Service) WithdrawAllRewards(delegatorAddr string, fees, chainID string, gas uint64, kb keys.Keybase) error {
+	txBldr := auth.NewTxBuilderFromCLIMemKeyBase(fees, chainID, gas, s.ctx.Codec, kb)
 	txBldr, err := auth.UpdateValidHeight(s.ctx, txBldr)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 	return cli.WithdrawAllRewards(s.ctx, txBldr, delegatorAddr)
 }
 
 // command to replace a delegator's withdrawal address
-func (s *Service) SetWithdrawAddr(delegatorAddress, withdrawAddress string, fees, chainID string, gas uint64) error {
-	txBldr := auth.NewTxBuilderFromCLI(s.ctx.RootDir, fees, chainID, gas, s.ctx.Codec)
+func (s *Service) SetWithdrawAddr(delegatorAddress, withdrawAddress string, fees, chainID string, gas uint64, kb keys.Keybase) error {
+	txBldr := auth.NewTxBuilderFromCLIMemKeyBase(fees, chainID, gas, s.ctx.Codec, kb)
 	txBldr, err := auth.UpdateValidHeight(s.ctx, txBldr)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 	return cli.SetWithdrawAddr(s.ctx, txBldr, delegatorAddress, withdrawAddress)
 }
 
-func (s *Service) RewardReinvestment(delegatorAddress, validatorAddress string, fees, chainID string, gas uint64) error {
-	txBldr := auth.NewTxBuilderFromCLI(s.ctx.RootDir, fees, chainID, gas, s.ctx.Codec)
+func (s *Service) RewardReinvestment(delegatorAddress, validatorAddress string, fees, chainID string, gas uint64, kb keys.Keybase) error {
+	txBldr := auth.NewTxBuilderFromCLIMemKeyBase(fees, chainID, gas, s.ctx.Codec, kb)
 	txBldr, err := auth.UpdateValidHeight(s.ctx, txBldr)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 	return cli.RewardReinvestment(s.ctx, txBldr, delegatorAddress, validatorAddress)
